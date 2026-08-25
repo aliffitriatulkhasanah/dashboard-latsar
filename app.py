@@ -114,7 +114,7 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 /* ---- Header halaman: judul italic serif polos (sesuai prototype - tanpa
    hero gradient/breadcrumb, cukup judul besar + subjudul kecil di bawahnya) ---- */
 .page-title {{ font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 700;
-    font-size: 2.1rem; color: {text}; margin: 0 0 4px 0; line-height: 1.2; }}
+    font-size: 3.5rem; color: {text}; margin: 0 0 4px 0; line-height: 1.2; }}
 .page-subtitle {{ font-size: 0.95rem; color: {text_muted}; margin-bottom: 22px; }}
 .page-header-wrap {{ margin-bottom: 24px; }}
 /* ---- Kartu metrik (varian solid - dipakai di dalam halaman detail) ---- */
