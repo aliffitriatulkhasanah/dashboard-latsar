@@ -1021,7 +1021,7 @@ if kategori == "Dashboard Utama":
             df_padi = df_pt[df_pt["komoditas"].str.lower() == "padi"].sort_values("tahun")
             row_padi = df_padi.iloc[-1] if not df_padi.empty else None
             with st.container(border=True):
-                panel_title("🗺️ Peta Wilayah Kabupaten Tanah Laut", "Arahkan kursor ke tiap kecamatan untuk lihat jumlah penduduknya")
+                panel_title("🗺️ Peta Wilayah Kabupaten Tanah Laut", "Arahkan kursor ke setiap kecamatan untuk melihat jumlah penduduk")
                 geo_data = load_geojson()
                 df_map = df_kep[(df_kep["tahun"] == t_max) & (df_kep["kecamatan"].str.lower() != "tanah laut")]
                 if geo_data and not df_map.empty:
