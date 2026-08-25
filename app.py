@@ -1498,7 +1498,7 @@ elif sub_kategori == "Inflasi":
                     df_harga["bulan_idx"] = df_harga["bulan_full"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
                     df_harga_f = df_harga[(df_harga["bulan_idx"] >= i0) & (df_harga["bulan_idx"] <= i1)].sort_values(["bulan_idx", "minggu"])
                     if not df_harga_f.empty:
-                        periode_labels = (df_harga_f["bulan"].astype(str) + "-m" + df_harga_f["minggu"].astype(str)).tolist()
+                        periode_labels = (df_harga_f["bulan"].astype(str) + "-m" + df_harga_f["minggu"].fillna(0).astype(int).astype(str)).tolist()
                         panel_title("Perkembangan Harga Mingguan Komoditas Utama")
                         c_h1, c_h2 = st.columns(2)
                         group1 = [("Bawang Merah", "bawang merah"), ("Bawang Putih", "bawang putih"), ("Beras", "beras"), ("Daging Ayam Ras", "daging ayam ras"), ("Telur Ayam Ras", "telur ayam ras")]
