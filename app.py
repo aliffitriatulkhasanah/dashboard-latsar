@@ -817,7 +817,7 @@ def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_
             if valid:
                 labels_clean = [str(l) for l, _ in valid]
                 vals_clean = [round(float(v), 4) for _, v in valid]
-                series_def = {"type": chart_type, "data": vals_clean, "itemStyle": {"color": color}, "symbolSize": 0}
+                series_def = {"name": "", "type": chart_type, "data": vals_clean, "itemStyle": {"color": color}, "symbolSize": 0}
                 if chart_type == "line":
                     series_def["smooth"] = True
                     series_def["lineStyle"] = {"color": color, "width": 2}
