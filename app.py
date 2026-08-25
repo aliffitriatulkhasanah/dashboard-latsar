@@ -1498,7 +1498,7 @@ elif sub_kategori == "Inflasi":
                     df_harga["bulan_idx"] = df_harga["bulan_full"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
                     df_harga_f = df_harga[(df_harga["bulan_idx"] >= i0) & (df_harga["bulan_idx"] <= i1)].sort_values(["bulan_idx", "minggu"])
                     if not df_harga_f.empty:
-                        periode_labels = df_harga_f["bulan"].tolist()
+                        periode_labels = (df_harga_f["bulan"].astype(str) + "-m" + df_harga_f["Minggu"].astype(str)).tolist()
                         panel_title("Perkembangan Harga Mingguan Komoditas Utama")
                         c_h1, c_h2 = st.columns(2)
                         group1 = [("Bawang Merah", "bawang merah"), ("Bawang Putih", "bawang putih"), ("Beras", "beras"), ("Daging Ayam Ras", "daging ayam ras"), ("Telur Ayam Ras", "telur ayam ras")]
@@ -1640,7 +1640,7 @@ elif kategori == "Pertanian":
                     )
             if not df_ntp_src.empty:
                 with st.container(border=True):
-                    panel_title("Nilai Tukar Petani (NTP) per Bulan", "Kabupaten Tanah Laut")
+                    panel_title("Nilai Tukar Petani (NTP) per Bulan", "Provinsi Kalimantan Selatan")
                     pivot = df_ntp_src.pivot_table(index="bulan", columns="tahun", values="ntp")
                     pivot = pivot.reindex(BULAN_URUT)
                     pivot.loc["RATA-RATA"] = pivot.mean()
