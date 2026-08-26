@@ -982,7 +982,7 @@ with st.sidebar:
         "<div class='sidebar-footer'>",
         "<div class='sidebar-footer-title'>Informasi Selengkapnya</div>",
         "<a class='sidebar-footer-link' href='#' target='_blank' rel='noopener noreferrer'>form kritik dan saran</a>",
-        "<a class='sidebar-footer-link' href='wa.me/6281388886301' target='_blank' rel='noopener noreferrer'>+62 813-8888-6301 (WA)</a>"
+        "<a class='sidebar-footer-link' href='https://wa.me/6281388886301' target='_blank' rel='noopener noreferrer'>+62 813-8888-6301 (WA)</a>"
         "<a class='sidebar-footer-link' href='https://instagram.com/bps_tanahlaut' target='_blank' rel='noopener noreferrer'>@bps_tanahlaut (Instagram)</a>",
         "</div>",
     )
