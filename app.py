@@ -1021,23 +1021,50 @@ if kategori == "Dashboard Utama":
                 df_map = df_kep[(df_kep["tahun"] == t_max) & (df_kep["kecamatan"].str.lower() != "tanah laut")]
                 if geo_data and not df_map.empty:
                     map_data = [{"name": r["kecamatan"], "value": r["jumlah_penduduk"], "pddk": r["jumlah_penduduk"]} for _, r in df_map.iterrows()]
-                    # Warna peta dibuat lembut & theme-aware (sebelumnya krem terang fixed
-                    # #FDE9C8 - kelihatan terlalu mencolok baik di light maupun dark mode).
-                    # Border dibuat kontras + agak tebal (1.5px) di kedua tema - sebelumnya
-                    # border putih di light mode nyaris tak kelihatan karena berdempet dengan
-                    # warna latar halaman yang juga terang.
-                    map_fill = "#3A3F55" if tema_gelap else "#EDE6D6"
-                    map_border = "#94A3B8" if tema_gelap else "#A8927A"
+                    
+                    # Hitung nilai minimum dan maksimum jumlah penduduk untuk skala gradasi
+                    pddk_vals = [d["value"] for d in map_data if pd.notna(d["value"])]
+                    vmin = min(pddk_vals) if pddk_vals else 0
+                    vmax = max(pddk_vals) if pddk_vals else 100000
+                
+                    # Penyesuaian batas wilayah & gradasi warna (Terang -> Gelap)
+                    map_border = "#94A3B8" if tema_gelap else "#64748B"
+                    # Warna gradasi: Terang (penduduk sedikit) ke Gelap (penduduk banyak)
+                    gradasi_warna = ["#C7D2FE", "#4F46E5", "#1E1B4B"] if tema_gelap else ["#EEF2FF", "#6366F1", "#1E1B4B"]
+                    
                     map_opts = {
                         "backgroundColor": "transparent",
-                        "tooltip": {"trigger": "item", "formatter": JsCode(
-                            "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
-                            "return '<b>'+p.name+'</b><br/>Jumlah Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
-                        )},
+                        "tooltip": {
+                            "trigger": "item", 
+                            "formatter": JsCode(
+                                "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
+                                "return '<b>'+p.name+'</b><br/>Jumlah Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
+                            )
+                        },
+                        # Komponen penanggung jawab gradasi warna (Choropleth Visual Map)
+                        "visualMap": {
+                            "show": True,
+                            "min": vmin,
+                            "max": vmax,
+                            "left": "left",
+                            "bottom": "0%",
+                            "inRange": {"color": gradasi_warna},
+                            "textStyle": {"color": "#9CA3AF" if tema_gelap else "#4B5563"},
+                            "formatter": JsCode("function(value){ return Number(value).toLocaleString('id-ID'); }"),
+                            "itemWidth": 12,
+                            "itemHeight": 90
+                        },
                         "series": [{
-                            "type": "map", "map": "TALA", "roam": False, "label": {"show": False},
-                            "itemStyle": {"areaColor": map_fill, "borderColor": map_border, "borderWidth": 1.5},
-                            "emphasis": {"label": {"show": True}, "itemStyle": {"areaColor": ACCENT, "borderColor": map_border, "borderWidth": 1.5}},
+                            "type": "map", 
+                            "map": "TALA", 
+                            "roam": False, 
+                            "label": {"show": False},
+                            # Hapus areaColor di itemStyle agar diatur penuh oleh visualMap
+                            "itemStyle": {"borderColor": map_border, "borderWidth": 1.5},
+                            "emphasis": {
+                                "label": {"show": True}, 
+                                "itemStyle": {"areaColor": ACCENT, "borderColor": map_border, "borderWidth": 1.5}
+                            },
                             "data": map_data,
                         }],
                     }
