@@ -10,11 +10,6 @@ render_custom_table+pagination, section_guard, dst) di-reuse dari versi
 sebelumnya karena sudah teruji lewat banyak putaran perbaikan (bug rendering
 HTML, dark/light mode, responsivitas, dsb) - lihat komentar di masing-masing
 fungsi untuk detail kenapa ditulis seperti itu.
-CATATAN PENTING soal data vs prototype: beberapa hal di desain prototype
-(chart TPT/TPAK & IPM bulanan, heatmap gender skala 0-7380, NTP per-provinsi
-5 tahun, pembanding PDRB vs Kalsel) ternyata tidak match dengan data asli di
-Database_Dashboard.xlsx. Sudah disesuaikan ke data yang benar-benar ada -
-lihat komentar di tiap halaman untuk detail penyesuaiannya.
 
 Patch (Agustus 2026): get_komoditas() dibuat mendeteksi baris header nama
 bulan secara otomatis (bukan hardcode iloc[1]) - supaya tahan kalau sheet
@@ -114,7 +109,7 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 /* ---- Header halaman: judul italic serif polos (sesuai prototype - tanpa
    hero gradient/breadcrumb, cukup judul besar + subjudul kecil di bawahnya) ---- */
 .page-title {{ font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 700;
-    font-size: 3.5rem; color: {text}; margin: 0 0 4px 0; line-height: 1.2; }}
+    font-size: 3rem !important; color: {text}; margin: 0 0 4px 0; line-height: 1.2; }}
 .page-subtitle {{ font-size: 0.95rem; color: {text_muted}; margin-bottom: 22px; }}
 .page-header-wrap {{ margin-bottom: 24px; }}
 /* ---- Kartu metrik (varian solid - dipakai di dalam halaman detail) ---- */
