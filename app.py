@@ -965,7 +965,7 @@ with st.sidebar:
             "**P0 / P1 / P2** — P0: persentase penduduk miskin. P1: kedalaman kemiskinan (seberapa jauh "
             "pengeluaran penduduk miskin dari garis kemiskinan). P2: keparahan kemiskinan (ketimpangan di "
             "antara penduduk miskin).\n\n"
-            "**Gini Ratio** — ukuran ketimpangan pengeluaran; 0 = merata sempurna, 1 = timpang sempurna.\n\n"
+            "**Rasio Gini** — ukuran ketimpangan pengeluaran; 0 = merata sempurna, 1 = timpang sempurna.\n\n"
             "**IPM** — Indeks Pembangunan Manusia: gabungan dimensi kesehatan, pendidikan, dan standar hidup layak.\n\n"
             "**IPG / IDG / IKG** — Indeks Pembangunan Gender, Indeks Pemberdayaan Gender, Indeks Ketimpangan Gender.\n\n"
             "**NTP** — Nilai Tukar Petani: rasio harga jual hasil pertanian terhadap harga barang yang "
@@ -976,13 +976,13 @@ with st.sidebar:
     if st.button("🔄 Refresh Data", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
-    _html(f"<div class='sidebar-caption'>Sinkron terakhir: {datetime.datetime.now().strftime('%d %b %Y, %H:%M')}</div>")
+    _html(f"<div class='sidebar-caption'>Sinkron terakhir: {(datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))).strftime('%d %b %Y, %H:%M')} WITA</div>")
     st.markdown("---")
     _html(
         "<div class='sidebar-footer'>",
         "<div class='sidebar-footer-title'>Informasi Selengkapnya</div>",
         "<a class='sidebar-footer-link' href='#' target='_blank' rel='noopener noreferrer'>form kritik dan saran</a>",
-        "<div class='sidebar-footer-text'>+62-813-8888-6301 (WA)</div>",
+        "<a class='sidebar-footer-link' href='wa.me/6281388886301' target='_blank' rel='noopener noreferrer'>+62 813-8888-6301 (WA)</a>"
         "<a class='sidebar-footer-link' href='https://instagram.com/bps_tanahlaut' target='_blank' rel='noopener noreferrer'>@bps_tanahlaut (Instagram)</a>",
         "</div>",
     )
