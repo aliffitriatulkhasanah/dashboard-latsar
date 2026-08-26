@@ -1046,18 +1046,7 @@ if kategori == "Dashboard Utama":
                     st.info("🗺️ Sistem spasial siap. Letakkan berkas `tanah_laut.geojson` sejajar dengan script.")
             st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
             panel_title("📌 Indikator Kunci")
-            '''
-            r1 = st.columns(4)
-            metric_card_outline(r1[0], "Jumlah Penduduk", fmt_id(row_kep["jumlah_penduduk"]) if row_kep is not None else "-")
-            metric_card_outline(r1[1], "Tingkat Pengangguran Terbuka", f"{row_tk['tpt']:g}%" if row_tk is not None and pd.notna(row_tk["tpt"]) else "-")
-            metric_card_outline(r1[2], "Persentase Penduduk Miskin", f"{row_ki['p0']:g}%" if row_ki is not None and pd.notna(row_ki["p0"]) else "-")
-            metric_card_outline(r1[3], "Indeks Pembangunan Manusia", fmt_id(row_ki["ipm"], 2) if row_ki is not None and pd.notna(row_ki["ipm"]) else "-")
-            st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-            r2 = st.columns(3)
-            metric_card_outline(r2[0], "Inflasi (y-on-y)", f"{row_inf['inflasi_yoy']:g}%" if row_inf is not None and pd.notna(row_inf["inflasi_yoy"]) else "-")
-            metric_card_outline(r2[1], "Pertumbuhan Ekonomi", f"{row_pdrb['pert_eko']:g}%" if row_pdrb is not None and pd.notna(row_pdrb["pert_eko"]) else "-")
-            metric_card_outline(r2[2], "Luas Panen Padi", f"{fmt_id(row_padi['luas_panen'])} Ha" if row_padi is not None else "-")
-            '''
+           
             # 1. Ambil tahun/bulan dari data masing-masing indikator
             th_kep = f" {int(row_kep['tahun'])}" if row_kep is not None and pd.notna(row_kep.get("tahun")) else ""
             th_tk = f" {int(row_tk['tahun'])}" if row_tk is not None and pd.notna(row_tk.get("tahun")) else ""
@@ -1066,7 +1055,7 @@ if kategori == "Dashboard Utama":
             th_padi = f" {int(row_padi['tahun'])}" if row_padi is not None and pd.notna(row_padi.get("tahun")) else ""
             
             # Khusus Inflasi: Ambil Bulan & Tahun (contoh: "Juli 2026")
-            bln_inf = f" ({row_inf['bulan']} {int(row_inf['tahun'])})" if row_inf is not None and pd.notna(row_inf.get("bulan")) else ""
+            bln_inf = f" {row_inf['bulan']} {int(row_inf['tahun'])}" if row_inf is not None and pd.notna(row_inf.get("bulan")) else ""
             
             # 2. Baris Pertama KPI (4 Kolom)
             r1 = st.columns(4)
