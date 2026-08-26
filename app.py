@@ -1646,7 +1646,7 @@ elif kategori == "Pertanian":
                     insight_box(
                         f"Interpretasi {komoditas_nama}",
                         f"Produksi {komoditas_nama} pada {int(last_kom['tahun'])} sebesar {fmt_id(last_kom['produksi'])} ton "
-                        f"dari luas panen {fmt_id(last_kom['luas_panen'])} Ha." + (f" {delta_txt} dibanding tahun sebelumnya." if delta_txt else ""),
+                        f"dari luas panen {fmt_id(last_kom['luas_panen'])} Ha." + (f" {delta_txt}." if delta_txt else ""),
                     )
             if not df_ntp_src.empty:
                 with st.container(border=True):
