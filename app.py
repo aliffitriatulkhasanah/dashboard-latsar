@@ -793,7 +793,7 @@ def mini_trend_panel(col, title: str, years: list, values: list, color: str, dec
                 "xAxis": {"type": "category", "data": years_clean, "axisLabel": {"fontSize": 10}, "axisLine": {"show": False}, "axisTick": {"show": False}},
                 "yAxis": {"type": "value", "show": False},
                 "series": [{
-                    "type": "line", "data": vals_clean, "smooth": True, "symbolSize": 6,
+                    "name": "", "type": "line", "data": vals_clean, "smooth": True, "symbolSize": 6,
                     "itemStyle": {"color": color}, "lineStyle": {"color": color, "width": 2},
                     "markPoint": {"symbol": "circle", "symbolSize": 22, "data": [{"coord": [len(vals_clean) - 1, last_val], "itemStyle": {"color": color}}], "label": {"show": False}},
                 }],
@@ -1316,7 +1316,7 @@ elif sub_kategori == "Kemiskinan":
             mini_trend_panel(c_p1, "Indeks Kedalaman Kemiskinan (P1)", years_m, df_k["p1"].tolist(), COLORS[1], decimals=2)
             mini_trend_panel(c_p2, "Indeks Keparahan Kemiskinan (P2)", years_m, df_k["p2"].tolist(), COLORS[3], decimals=2)
             df_disp = df_k[["tahun", "p0", "p1", "p2", "jml_miskin", "garis_kemiskinan", "gini"]].rename(
-                columns={"tahun": "Tahun", "p0": "P0 (%)", "p1": "P1", "p2": "P2", "jml_miskin": "Jumlah (Jiwa)", "garis_kemiskinan": "Garis Kemiskinan (Rp)", "gini": "Gini"}
+                columns={"tahun": "Tahun", "p0": "P0 (%)", "p1": "P1", "p2": "P2", "jml_miskin": "Jumlah (Jiwa)", "garis_kemiskinan": "Garis Kemiskinan (Rp)", "gini": "Rasio Gini"}
             )
             render_custom_table(df_disp.sort_values("Tahun", ascending=False), key="kemiskinan")
 elif sub_kategori == "IPM":
