@@ -1911,7 +1911,7 @@ elif sub_kategori == "Track Record Inflasi":
                 st_echarts(options=opts_multi, height="400px", key="tr_inflasi_line", theme=e_theme)
 
             with st.container(border=True):
-                panel_title("Indeks Harga Konsumen (IHK)", {rentang_waktu})
+                panel_title("Indeks Harga Konsumen (IHK)", "Januari 2024 - Juli 2026")
                 opts_ihk = {
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
                     "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
