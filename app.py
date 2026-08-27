@@ -5,6 +5,7 @@ Revisi v3: rombak total mengikuti prototype desain baru (nav-bar + landing page
 + 7 halaman: Dashboard Utama, Kependudukan, Tenaga Kerja, Kemiskinan, IPM,
 Inflasi, Pertumbuhan Ekonomi, Pertanian) dan struktur database Excel baru
 (sheet: Kependudukan, Tenaga Kerja, Kemiskinan_IPM, PDRB, Inflasi_NTP, Pertanian).
+
 CSS, helper komponen (_html, page_header, metric_card, insight_box, panel_title,
 render_custom_table+pagination, section_guard, dst) di-reuse dari versi
 sebelumnya karena sudah teruji lewat banyak putaran perbaikan (bug rendering
@@ -15,6 +16,17 @@ Patch (Agustus 2026): get_komoditas() dibuat mendeteksi baris header nama
 bulan secara otomatis (bukan hardcode iloc[1]) - supaya tahan kalau sheet
 "Komoditas" di Google Sheets ke-geser barisnya saat diedit manual, dan
 memunculkan pesan error yang jelas kalau header tetap tidak ketemu.
+
+Patch (Agustus 2026, ronde 2):
+- Bubble chart Top 10 komoditas (halaman Inflasi) sekarang pakai IHK PER
+  KOMODITAS bulan berjalan (sheet "IHK Komoditas") sebagai sumbu-X, apple to
+  apple dengan andil m-to-m bulan berjalan di sumbu-Y - sebelumnya sempat pakai
+  IHK Tanah Laut (bukan per komoditas) lalu dirata-rata, ternyata datanya ADA
+  di sheet tersendiri jadi tidak perlu didekati/dirata-ratakan lagi.
+- Ditambah kotak dokumen PDF Bahan Rilis Inflasi di halaman Inflasi.
+- Ditambah halaman baru "Track Record Inflasi" di sub-kategori Ekonomi.
+- Slider "Rentang Waktu" dihilangkan dari sidebar saat kategori = Dashboard
+  Utama (halaman itu memang selalu menampilkan data TERBARU, tidak difilter).
 """
 import streamlit as st
 import pandas as pd
@@ -26,6 +38,7 @@ import base64
 import datetime
 from urllib.parse import quote
 from streamlit_echarts import st_echarts, JsCode, Map
+
 # ==============================================================================
 # 1. KONFIGURASI HALAMAN & KONSTANTA
 # ==============================================================================
@@ -35,6 +48,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="auto",
 )
+
 # PENTING: Streamlit melarang mengubah st.session_state[key] milik sebuah widget
 # SETELAH widget itu di-render di run yang sama - walau langsung disusul st.rerun().
 # Makanya drill-down "klik peta -> ubah pilihan kecamatan" tidak bisa langsung
@@ -43,6 +57,7 @@ st.set_page_config(
 # selectbox itu sempat di-render - nilai pending dipindahkan ke key aslinya.
 if "kepen_wilayah_pending" in st.session_state:
     st.session_state["kepen_wilayah"] = st.session_state.pop("kepen_wilayah_pending")
+
 SHEET_ID = st.secrets.get("SHEET_ID", "1nQh8AezWpM8TfsaknlNO922yqqBWWBfDKah4fm9tpHU")
 PRIMARY = "#4F46E5"
 SECONDARY = "#7C3AED"
@@ -51,6 +66,14 @@ COLORS = ["#4F46E5", "#F59E0B", "#10B981", "#EC4899", "#06B6D4", "#D97706"]
 CARD_ACCENTS = ["#4F46E5", "#F59E0B", "#EC4899", "#06B6D4", "#10B981"]
 GEOJSON_PATH = "tanah_laut.geojson"
 LOGO_PATH = "bps.png"
+# Berkas PDF Bahan Rilis Inflasi - taruh sejajar dengan app.py (pola sama
+# seperti LOGO_PATH) supaya bisa disematkan sebagai data URI (bisa dibuka di
+# tab baru/pembuka PDF TANPA perlu di-hosting terpisah). Bisa juga dioverride
+# lewat st.secrets["PDF_RILIS_URL"] kalau kamu lebih suka nge-host di tempat
+# lain (mis. Google Drive/Storage publik) - kalau itu diisi, dipakai duluan.
+PDF_RILIS_PATH = "rilis_inflasi.pdf"
+PDF_RILIS_URL = st.secrets.get("PDF_RILIS_URL", "")
+
 REQUIRED_COLUMNS = {
     "Kependudukan": ["tahun", "kecamatan", "jumlah_penduduk", "kepadatan", "pertumbuhan", "lk", "pr", "rasio_jk"],
     "Tenaga Kerja": ["tahun", "tpt", "tpak", "bekerja", "pengangguran", "sekolah", "mengurus rt", "lainnya", "r_ketergantungan"],
@@ -60,17 +83,24 @@ REQUIRED_COLUMNS = {
     "Pertanian": ["tahun", "komoditas", "luas_panen", "produksi"],
     "Harga": ["tahun", "bulan", "minggu", "bawang merah", "bawang putih", "beras", "daging ayam ras", "telur ayam ras", "ikan gabus", "ikan nila", "gula pasir", "minyak goreng", "cabai rawit"],
 }
+
 BREADCRUMB_ICON = {
     "Dashboard Utama": "🏠",
     "Demografi & Sosial": "👥",
     "Ekonomi": "💰",
     "Pertanian": "🌾",
 }
+
 # Urutan bulan Indonesia (dipakai untuk sorting/pivot, karena default alfabetis salah urutan)
 BULAN_URUT = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
 # Sheet "Harga" pakai singkatan bulan (Jan, Feb, ...), sementara sheet lain (Inflasi_NTP,
 # Komoditas) pakai nama penuh - mapping ini menjembatani keduanya.
 BULAN_ABBR_MAP = {"Jan": "Januari", "Feb": "Februari", "Mar": "Maret", "Apr": "April", "Mei": "Mei", "Juni": "Juni", "Juli": "Juli", "Agu": "Agustus", "Agt": "Agustus"}
+# Singkatan 3-huruf dipakai untuk label sumbu-X yang lebih padat di halaman
+# "Track Record Inflasi" (data 31 bulan berturut-turut - label penuh terlalu panjang).
+BULAN_ABBR3 = {"Januari": "Jan", "Februari": "Feb", "Maret": "Mar", "April": "Apr", "Mei": "Mei", "Juni": "Jun", "Juli": "Jul", "Agustus": "Agu", "September": "Sep", "Oktober": "Okt", "November": "Nov", "Desember": "Des"}
+
+
 # ==============================================================================
 # 2. UTIL: render HTML tanpa jebakan indentasi Markdown
 # ==============================================================================
@@ -80,6 +110,8 @@ def _html(*parts: str) -> str:
     (termasuk baris kosong/whitespace) dianggap code-block dan HTML-nya bocor
     sebagai teks literal."""
     st.markdown("".join(parts), unsafe_allow_html=True)
+
+
 # ==============================================================================
 # 3. CSS / TEMA
 # ==============================================================================
@@ -92,10 +124,12 @@ def inject_css(dark: bool):
     border = "rgba(255,255,255,0.08)" if dark else "rgba(15,23,42,0.08)"
     shadow = "0 1px 3px rgba(0,0,0,0.4)" if dark else "0 1px 3px rgba(15,23,42,0.06)"
     stripe = "rgba(255,255,255,0.02)" if dark else "rgba(15,23,42,0.015)"
+
     st.markdown(
         f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600;1,700;1,800&display=swap');
+
 :root {{ color-scheme: {"dark" if dark else "light"} !important; }}
 html, body, [class*="css"] {{ font-family: 'Inter', -apple-system, sans-serif !important; }}
 #MainMenu, footer {{visibility: hidden;}}
@@ -106,12 +140,14 @@ html, body, [class*="css"] {{ font-family: 'Inter', -apple-system, sans-serif !i
 [data-testid="stSidebar"] .block-container {{ padding-top: 1.5rem !important; }}
 h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .stCaption, [data-testid="stCaptionContainer"] {{ color: {text_muted} !important; }}
+
 /* ---- Header halaman: judul italic serif polos (sesuai prototype - tanpa
    hero gradient/breadcrumb, cukup judul besar + subjudul kecil di bawahnya) ---- */
 .page-title {{ font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 700;
     font-size: 3rem !important; color: {text}; margin: 0 0 4px 0; line-height: 1.2; }}
 .page-subtitle {{ font-size: 0.95rem; color: {text_muted}; margin-bottom: 22px; }}
 .page-header-wrap {{ margin-bottom: 24px; }}
+
 /* ---- Kartu metrik (varian solid - dipakai di dalam halaman detail) ---- */
 .metric-card {{ background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 16px 14px 16px; min-height: 96px; box-shadow: {shadow}; display: flex; flex-direction: column; justify-content: flex-start; transition: transform 0.15s ease; }}
 .metric-card:hover {{ transform: translateY(-2px); }}
@@ -120,6 +156,7 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .metric-card .m-label {{ font-size: 0.74rem; font-weight: 700; color: {text_muted}; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.4px; }}
 .metric-card .m-value {{ font-size: 1.65rem; font-weight: 800; color: {text}; line-height: 1.1; margin-top: 6px; }}
 .metric-card .m-trend {{ font-size: 0.76rem; font-weight: 700; }}
+
 /* ---- Kartu metrik varian OUTLINE (khusus landing page "Dashboard Utama" -
    sesuai prototype: kotak dengan border oranye/emas tipis, tanpa fill warna,
    label di atas dan angka besar di bawah, rata tengah) ---- */
@@ -129,19 +166,32 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .metric-card-outline .mo-value {{ font-size: 1.5rem; font-weight: 800; color: {text}; }}
 .metric-card-outline .mo-trend {{ font-size: 0.76rem; font-weight: 700; }}
 .m-up {{ color: #10B981; }} .m-down {{ color: #EF4444; }} .m-flat {{ color: {text_muted}; }}
+
 /* ---- Kotak interpretasi otomatis ---- */
 .insight-box {{ background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {ACCENT}; padding: 14px 18px; border-radius: 10px; margin: 6px 0 22px 0; box-shadow: {shadow}; }}
 .insight-title {{ font-weight: 800; margin-bottom: 3px; font-size: 0.88rem; color: {text}; }}
 .insight-text {{ font-size: 0.88rem; color: {text_muted}; line-height: 1.5; }}
+
+/* ---- Kotak dokumen PDF (halaman Inflasi) - kartu klik-utuh berbentuk link,
+   supaya klik di mana pun di kartu langsung membuka dokumen. ---- */
+.pdf-card {{ display:flex; align-items:center; gap:14px; background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 18px; text-decoration: none !important; box-shadow: {shadow}; transition: transform 0.15s ease, border-color 0.15s ease; margin-bottom: 10px; }}
+.pdf-card:hover {{ transform: translateY(-2px); border-color: {PRIMARY}; }}
+.pdf-card-icon {{ font-size: 2rem; line-height: 1; }}
+.pdf-card-title {{ font-weight: 700; font-size: 0.95rem; color: {text}; margin: 0; }}
+.pdf-card-sub {{ font-size: 0.8rem; color: {text_muted}; margin-top: 2px; }}
+
 /* ---- Panel section (pembungkus chart) ---- */
 .panel-title {{ font-size: 1.02rem; font-weight: 700; color: {text}; margin-bottom: 2px; }}
 .panel-sub {{ font-size: 0.8rem; color: {text_muted}; margin-bottom: 10px; }}
 [data-testid="stVerticalBlockBorderWrapper"] {{ border-radius: 12px !important; border-color: {border} !important; background-color: {surface} !important; box-shadow: {shadow}; }}
+
 /* ---- Chip badge (mis. "Kecamatan: Panyipatan" yang aktif akibat drill-down) ---- */
 .chip {{ display:inline-block; background-color: {surface}; border: 1.5px solid {PRIMARY}; color: {PRIMARY}; font-weight: 700; font-size: 0.85rem; padding: 6px 16px; border-radius: 999px; margin-bottom: 14px; }}
+
 .donut-center {{ text-align:center; }}
 .donut-center .dc-label {{ font-size: 0.8rem; color: {text_muted}; font-weight: 600; }}
 .donut-center .dc-value {{ font-size: 1.5rem; font-weight: 800; color: {PRIMARY}; }}
+
 /* ---- Kartu hero IPM (lebih besar dari metric-card biasa, sesuai desain) ---- */
 .ipm-hero {{ background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
 .ipm-hero-label {{ font-size: 0.85rem; font-weight: 700; color: {text_muted}; text-transform: uppercase; letter-spacing: 0.4px; }}
@@ -149,6 +199,7 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .ipm-hero-value {{ font-size: 2.4rem; font-weight: 900; color: {text}; }}
 .ipm-hero-badge {{ font-size: 0.85rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; background-color: {surface}; }}
 .ipm-hero-sub {{ font-size: 0.78rem; color: {text_muted}; margin-top: 6px; }}
+
 /* ---- Tabel kustom ---- */
 .table-scroll {{ width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-shadow: {shadow}; margin: 10px 0; }}
 .custom-table {{ width: 100%; min-width: 480px; border-collapse: collapse; font-size: 0.88em; }}
@@ -162,6 +213,7 @@ div[data-testid="column"] .stButton > button {{ padding: 0.25rem 0.6rem; font-si
 .data-error {{ background-color: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-left: 4px solid #EF4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 0.86rem; }}
 .data-info {{ background-color: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); border-left: 4px solid {PRIMARY}; padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; }}
 .footer-note {{ text-align:center; opacity:0.55; font-size:0.76rem; margin-top:36px; color: {text_muted}; }}
+
 /* ---- Sidebar polish ---- */
 section[data-testid="stSidebar"] .stSelectbox label, section[data-testid="stSidebar"] .stSlider label {{ font-weight: 700; font-size: 0.82rem; }}
 .sidebar-brand {{ text-align:center; padding: 4px 0 14px 0; }}
@@ -169,15 +221,18 @@ section[data-testid="stSidebar"] .stSelectbox label, section[data-testid="stSide
 .logo-img {{ width: 64px; height: 64px; object-fit: contain; background: #FFFFFF; border-radius: 50%; padding: 8px; box-shadow: 0 6px 16px rgba(30,64,175,0.2); display: block; margin: 0 auto; }}
 .logo-caption {{ font-size: 0.86rem; font-weight: 700; color: {text}; margin-top: 8px; }}
 .sidebar-caption {{ text-align:center; font-size:0.78rem; color:{text_muted}; margin-top:4px; }}
+
 /* ---- Footer info sidebar (Informasi Selengkapnya) - rata tengah, 4 baris ---- */
 .sidebar-footer {{ text-align: center; padding: 4px 6px 8px 6px; }}
 .sidebar-footer-title {{ font-weight: 700; font-size: 0.85rem; color: {text}; margin-bottom: 6px; }}
 .sidebar-footer-link {{ display: block; font-size: 0.8rem; color: {PRIMARY}; text-decoration: none !important; margin-bottom: 4px; }}
 .sidebar-footer-link:hover {{ text-decoration: underline !important; }}
 .sidebar-footer-text {{ font-size: 0.8rem; color: {text_muted}; margin-bottom: 4px; }}
+
 a.sidebar-link {{ display:block; text-decoration:none !important; }}
 a.sidebar-link:hover {{ color:{PRIMARY} !important; text-decoration:underline !important; }}
 .nav-group-title {{ font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: {text_muted}; margin: 14px 0 4px 0; }}
+
 /* ---- Sub-Kategori sebagai daftar tombol bertumpuk (bukan dropdown) - sesuai
    prototype: tombol aktif berwarna mauve/rose solid teks putih, tombol lain
    abu-abu muda. Disasar lewat parameter type="primary"/"secondary" pada
@@ -198,6 +253,7 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"] {{
 div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
     background-color: {"#4B5563" if dark else "#D1D5DB"} !important;
 }}
+
 /* ---- Tabel varian header berwarna (dipakai untuk tabel NTP / PDRB di
    halaman Pertanian & Pertumbuhan Ekonomi, sesuai skema warna prototype) ---- */
 .table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #F5C518; }}
@@ -211,6 +267,7 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
    latar terang). !important perlu karena aturan umum "h1,h2,h3,h4,p,label,
    span" di atas sudah men-set warna teks ikut tema dengan spesifisitas tag. */
 .table-scroll.tbl-yellow .custom-table tbody td {{ color: #1F2937 !important; }}
+
 .pdrb-table {{ width: 100%; border-collapse: collapse; font-size: 0.88em; text-align: center; }}
 .pdrb-table th, .pdrb-table td {{ padding: 9px 12px; border: 1px solid {border}; }}
 .pdrb-table thead th.grp-tahun {{ background-color: #F5C518; color: #1F2937 !important; }}
@@ -219,11 +276,13 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 .pdrb-table tbody td.col-tahun {{ background-color: #FBD1E7; color: #1F2937 !important; font-weight: 700; }}
 .pdrb-table tbody td.col-nilai {{ background-color: #D6EBFB; color: #1F2937 !important; }}
 .pdrb-table tbody td.col-perkap {{ background-color: {surface}; color: {text}; }}
+
 /* ---- Heatmap gender (IPM) ---- */
 .gender-heat-table {{ width: 100%; border-collapse: collapse; font-size: 0.86em; text-align: center; }}
 .gender-heat-table th, .gender-heat-table td {{ padding: 10px 12px; border: 1px solid {border}; }}
 .gender-heat-table thead th {{ background-color: {"#1F2937" if dark else "#F3F4F6"}; }}
 .gender-heat-table tbody th {{ text-align: left; font-weight: 700; background-color: {"#1F2937" if dark else "#F3F4F6"}; }}
+
 /* ---- Widget bawaan Streamlit: paksa ikut tema ----
    Streamlit punya DUA kemungkinan implementasi selectbox tergantung versi:
    1) BaseWeb lama -> div[data-baseweb="select"]
@@ -251,12 +310,16 @@ div[data-baseweb="popover"] {{ border: 1px solid {border} !important; }}
 [role="listbox"] {{ border: 1px solid {border} !important; border-radius: 8px !important; }}
 [role="option"]:hover, [role="option"]:hover * {{ background-color: {stripe if dark else "rgba(37,99,235,0.08)"} !important; }}
 [role="option"][aria-selected="true"], [role="option"][aria-selected="true"] * {{ background-color: {"rgba(59,95,224,0.25)" if dark else "rgba(37,99,235,0.12)"} !important; color: {text} !important; font-weight: 600; }}
+
 .stButton > button, .stDownloadButton > button {{ background-color: {surface} !important; color: {text} !important; border: 1px solid {border} !important; box-shadow: {shadow}; }}
 .stButton > button:hover, .stDownloadButton > button:hover {{ border-color: {PRIMARY} !important; }}
 .stButton > button p, .stDownloadButton > button p {{ color: inherit !important; }}
 div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSlider"] [data-testid="stTickBarMax"] {{ color: {text_muted} !important; }}
 .stRadio label p, .stRadio div[role="radiogroup"] label {{ color: {text} !important; }}
 [data-testid="stWidgetLabel"] p {{ color: {text} !important; }}
+[data-testid="stMultiSelect"] [role="group"] {{ background-color: {surface} !important; border: 1px solid {border} !important; }}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] {{ background-color: {PRIMARY} !important; }}
+
 /* ---- Expander (mis. "Kamus Istilah") - belum pernah di-cover sebelumnya,
    makanya headernya masih pakai warna gelap default Streamlit walau app
    sedang light mode. */
@@ -266,6 +329,7 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 [data-testid="stExpander"] summary p, [data-testid="stExpander"] summary span {{ color: {text} !important; }}
 [data-testid="stExpander"] summary svg {{ fill: {text_muted} !important; }}
 [data-testid="stExpanderDetails"] {{ background-color: {surface} !important; color: {text} !important; }}
+
 /* ---- Tooltip (dari parameter help= pada tombol/widget) - belum pernah
    di-cover, makanya muncul kotak hitam aneh saat hover apapun tema-nya.
    Pakai role="tooltip" DAN partial-match data-testid karena implementasinya
@@ -277,6 +341,7 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     color: {"#F9FAFB" if not dark else "#1F2937"} !important;
 }}
 [role="tooltip"], [data-testid*="ooltip" i] {{ border-radius: 6px !important; font-size: 0.8rem !important; border: none !important; }}
+
 /* ---- Tombol collapse/expand sidebar: kontras kurang di mode terang ----
    Pakai partial-match [data-testid*="ollaps"] karena nama testid berbeda
    antar versi Streamlit (stSidebarCollapseButton / stSidebarCollapsedControl /
@@ -302,6 +367,7 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 [data-testid="stSidebarCollapseButton"]:hover [data-testid="stIconMaterial"] {{
     color: {PRIMARY} !important;
 }}
+
 /* ---- Responsif: tablet & mobile ----
    Ukuran font/padding di atas dirancang untuk layar desktop. Di layar sempit,
    header, kartu, dan panel perlu dipadatkan supaya proporsional dan tidak
@@ -314,6 +380,7 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     .block-container {{ padding-left: 1rem !important; padding-right: 1rem !important; }}
     .page-title {{ font-size: 1.85rem; }}
 }}
+
 @media (max-width: 768px) {{
     .block-container {{ padding-left: 0.7rem !important; padding-right: 0.7rem !important; }}
     .app-hero {{ padding: 16px 18px; border-radius: 12px; }}
@@ -334,6 +401,10 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     .custom-table th, .custom-table td {{ padding: 7px 10px; }}
     .pdrb-table, .gender-heat-table {{ font-size: 0.8em; min-width: 480px; }}
     .pdrb-table th, .pdrb-table td, .gender-heat-table th, .gender-heat-table td {{ padding: 6px 8px; }}
+    .pdf-card {{ padding: 12px 14px; gap: 10px; }}
+    .pdf-card-icon {{ font-size: 1.5rem; }}
+    .pdf-card-title {{ font-size: 0.88rem; }}
+    .pdf-card-sub {{ font-size: 0.75rem; }}
     /* Kartu/panel di dalam st.container(border=True) diberi jarak bawah
        sedikit lebih besar supaya tidak terasa berdempetan saat kolom-kolom
        ikut stack vertikal (perilaku default Streamlit di layar sempit). */
@@ -342,6 +413,7 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
        ~336px terasa lebar di layar 480-768px), dengan bayangan drawer. */
     [data-testid="stSidebar"] {{ width: 62vw !important; min-width: 260px !important; max-width: 320px !important; box-shadow: 4px 0 24px rgba(0,0,0,0.2); }}
 }}
+
 @media (max-width: 480px) {{
     .app-hero .title {{ font-size: 1.05rem; }}
     .app-hero .breadcrumb {{ font-size: 0.72rem; }}
@@ -358,6 +430,7 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     [data-testid="stSidebar"] {{ min-width: 220px !important; width: 70vw !important; max-width: 260px !important; box-shadow: 4px 0 24px rgba(0,0,0,0.25); }}
     [data-testid="stSidebar"] .block-container {{ padding-left: 0.9rem !important; padding-right: 0.9rem !important; }}
 }}
+
 /* ---- Pagination tabel: WAJIB selalu sejajar kiri-kanan, tidak boleh ikut
    stack ke bawah seperti kolom lain saat layar sempit. Disasar lewat
    st.container(key="pager_...") yang menghasilkan class stabil "st-key-pager_*"
@@ -382,6 +455,8 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 """,
         unsafe_allow_html=True,
     )
+
+
 MAP_TOOLTIP = JsCode(
     """
 function(params) {
@@ -397,6 +472,7 @@ function(params) {
 }
 """
 )
+
 FMT_ID = JsCode(
     """
 function(params) {
@@ -410,6 +486,8 @@ function(params) {
 }
 """
 )
+
+
 # ==============================================================================
 # 4. UTILITAS DATA
 # ==============================================================================
@@ -429,6 +507,8 @@ def clean_numeric(val):
         return float(v)
     except ValueError:
         return np.nan
+
+
 def fmt_id(value, decimals=0):
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return "-"
@@ -437,6 +517,8 @@ def fmt_id(value, decimals=0):
         return s.replace(",", "#").replace(".", ",").replace("#", ".")
     except (TypeError, ValueError):
         return str(value)
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_data(sheet_name: str):
     # PENTING: nama sheet di-encode karena "Tenaga Kerja" mengandung spasi -
@@ -461,22 +543,29 @@ def fetch_data(sheet_name: str):
         if col not in text_cols:
             df[col] = df[col].apply(clean_numeric)
     return df, None
+
+
 def get_df(sheet_name: str) -> pd.DataFrame:
     df, err = fetch_data(sheet_name)
     if err:
         _html(f"<div class='data-error'>⚠️ {html.escape(err)}</div>")
     return df
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_raw_csv(sheet_name: str):
     """Fetch CSV mentah TANPA asumsi skema standar (kolom 'tahun', dst) - dipakai
-    untuk sheet berbentuk lain: Dist_PDRB (wide, tahun sebagai kolom) dan
-    Komoditas (2 baris header karena sel judul di-merge)."""
+    untuk sheet berbentuk lain: Dist_PDRB (wide, tahun sebagai kolom),
+    Komoditas/IHK Komoditas (2 baris header karena sel judul di-merge), dan
+    Inflasi_COICOP22 (wide per kelompok pengeluaran)."""
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={quote(sheet_name)}"
     try:
         df = pd.read_csv(url, header=None)
         return df, None
     except Exception as e:
         return pd.DataFrame(), f"Gagal mengambil sheet '{sheet_name}': {e}"
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_dist_pdrb() -> pd.DataFrame:
     """Sheet Dist_PDRB formatnya wide (kategori, sektor, lalu tahun jadi kolom
@@ -502,21 +591,19 @@ def get_dist_pdrb() -> pd.DataFrame:
     df_long["kategori"] = df_long["kategori"].astype(str).str.strip().str.lower()
     df_long["sektor"] = df_long["sektor"].astype(str).str.strip()
     return df_long
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
-def get_komoditas() -> pd.DataFrame:
-    """Sheet Komoditas: baris header (nama bulan) dicari OTOMATIS di antara
-    5 baris teratas - bukan hardcode ke iloc[1] seperti versi sebelumnya.
-    Alasan patch ini: versi lama mengasumsikan baris index 1 SELALU berisi
-    nama bulan (['', 'Januari', 'Februari', ...]) karena baris 0 adalah judul
-    'Andil Inflasi M-to-M' yang di-merge sepanjang kolom bulan. Kalau sheet
-    di Google Sheets ke-geser barisnya (mis. ada baris kosong tambahan saat
-    diedit manual), iloc[1] jadi salah ambil baris dan df_kom.columns berisi
-    bukan nama bulan sama sekali - akibatnya bulan_cols_sofar di halaman
-    Inflasi selalu pendek dan bubble chart Top 10 komoditas tidak pernah
-    muncul, TANPA pesan error yang jelas. Sekarang dicari baris mana yang
-    paling banyak cocok dengan BULAN_URUT, dan kalau tetap tidak ketemu,
-    ditampilkan pesan error spesifik alih-alih diam-diam gagal."""
-    raw, err = fetch_raw_csv("Komoditas")
+def _get_komoditas_wide(sheet_name: str) -> pd.DataFrame:
+    """Loader generik untuk sheet berformat 'wide per bulan' dengan 2 baris
+    header (baris judul yang di-merge sepanjang kolom bulan + baris nama
+    bulan sebenarnya) - dipakai untuk DUA sheet yang strukturnya identik:
+    'Komoditas' (Andil Inflasi M-to-M per komoditas) dan 'IHK Komoditas'
+    (IHK per komoditas). Baris header dicari OTOMATIS di antara 5 baris
+    teratas (bukan hardcode ke iloc[1]) supaya tahan kalau sheet ke-geser
+    barisnya saat diedit manual di Google Sheets, dan memunculkan pesan
+    error yang jelas kalau header tetap tidak ketemu - bukan diam-diam gagal."""
+    raw, err = fetch_raw_csv(sheet_name)
     if err or raw.empty or len(raw) < 3:
         if err:
             _html(f"<div class='data-error'>⚠️ {html.escape(err)}</div>")
@@ -531,7 +618,7 @@ def get_komoditas() -> pd.DataFrame:
 
     if header_row_idx is None or best_match < 3:
         _html(
-            "<div class='data-error'>⚠️ Sheet 'Komoditas': baris header nama "
+            f"<div class='data-error'>⚠️ Sheet '{html.escape(sheet_name)}': baris header nama "
             "bulan (Januari, Februari, dst) tidak terdeteksi di 5 baris "
             "teratas. Cek ulang struktur sheet - mungkin ada baris "
             "kosong/tambahan yang menggeser posisi header.</div>"
@@ -547,12 +634,71 @@ def get_komoditas() -> pd.DataFrame:
             df[col] = df[col].apply(clean_numeric)
     df["komoditas"] = df["komoditas"].astype(str).str.strip()
     return df
+
+
+def get_komoditas() -> pd.DataFrame:
+    """Sheet 'Komoditas': Andil Inflasi M-to-M per komoditas, per bulan."""
+    return _get_komoditas_wide("Komoditas")
+
+
+def get_ihk_komoditas() -> pd.DataFrame:
+    """Sheet 'IHK Komoditas': IHK per komoditas, per bulan - dipakai sebagai
+    sumbu-X bubble chart Top 10 komoditas di halaman Inflasi (apple to apple
+    dengan Andil M-to-M bulan berjalan di sumbu-Y, sama-sama data KOMODITAS
+    per bulan, bukan angka gabungan kabupaten)."""
+    return _get_komoditas_wide("IHK Komoditas")
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_coicop() -> pd.DataFrame:
+    """Sheet 'Inflasi_COICOP22': inflasi YoY per 11 kelompok pengeluaran
+    (COICOP), Januari 2024 - Juli 2026 - dipakai di halaman "Track Record
+    Inflasi".
+
+    CATATAN PENTING: di sheet aslinya, header kolom pertama & kedua TERTUKAR -
+    kolom bertajuk 'Tahun' sebenarnya isinya nama BULAN, dan kolom bertajuk
+    'Bulan' sebenarnya isinya angka TAHUN (sudah dicek langsung ke data
+    mentahnya, bukan salah baca). Fungsi ini mendeteksi kuirk itu otomatis
+    (cek apakah isi kolom pertama adalah nama bulan) dan menormalkannya,
+    supaya kode di halaman tidak perlu tahu soal kondisi sheet sumbernya."""
+    raw, err = fetch_raw_csv("Inflasi_COICOP22")
+    if err or raw.empty:
+        if err:
+            _html(f"<div class='data-error'>⚠️ {html.escape(err)}</div>")
+        return pd.DataFrame()
+    # Sheet punya banyak kolom kosong sisa export - dibatasi ke 13 kolom
+    # bermakna saja (Tahun, Bulan, + 11 kelompok pengeluaran).
+    raw = raw.iloc[:, :13]
+    header = [str(h).strip() for h in raw.iloc[0].tolist()]
+    df = raw[1:].reset_index(drop=True)
+    df.columns = header
+    df = df.dropna(subset=[df.columns[0]])
+    if df.empty:
+        return pd.DataFrame()
+    first_col, second_col = df.columns[0], df.columns[1]
+    sample_first = str(df[first_col].iloc[0]).strip()
+    if sample_first in BULAN_URUT:
+        df = df.rename(columns={first_col: "bulan", second_col: "tahun"})
+    else:
+        df = df.rename(columns={first_col: "tahun", second_col: "bulan"})
+    df["tahun"] = pd.to_numeric(df["tahun"], errors="coerce")
+    df = df.dropna(subset=["tahun"])
+    df["tahun"] = df["tahun"].astype(int)
+    df["bulan"] = df["bulan"].astype(str).str.strip()
+    kategori_cols = [c for c in df.columns if c not in ("tahun", "bulan")]
+    for c in kategori_cols:
+        df[c] = df[c].apply(clean_numeric)
+    return df
+
+
 @st.cache_resource(show_spinner=False)
 def load_geojson():
     if os.path.exists(GEOJSON_PATH):
         with open(GEOJSON_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
+
+
 @st.cache_resource(show_spinner=False)
 def load_logo_base64():
     """Baca bps.png (harus sejajar dengan app.py) dan encode ke base64
@@ -561,10 +707,26 @@ def load_logo_base64():
         with open(LOGO_PATH, "rb") as f:
             return base64.b64encode(f.read()).decode()
     return None
+
+
+@st.cache_resource(show_spinner=False)
+def load_pdf_bytes():
+    """Baca rilis_inflasi.pdf (harus sejajar dengan app.py) sebagai bytes -
+    dipakai untuk tombol unduh (st.download_button) DAN untuk disematkan
+    sebagai data URI supaya bisa dibuka langsung di tab baru/pembuka PDF
+    tanpa perlu di-hosting terpisah. None kalau berkasnya belum ada."""
+    if os.path.exists(PDF_RILIS_PATH):
+        with open(PDF_RILIS_PATH, "rb") as f:
+            return f.read()
+    return None
+
+
 def apply_filter(df: pd.DataFrame, year_range):
     if df.empty or "tahun" not in df.columns:
         return df
     return df[(df["tahun"] >= year_range[0]) & (df["tahun"] <= year_range[1])]
+
+
 # ==============================================================================
 # 5. KOMPONEN UI
 # ==============================================================================
@@ -581,6 +743,8 @@ def page_header(icon: str, title: str, breadcrumb: str, subtitle: str = ""):
         sub_html,
         "</div>",
     )
+
+
 def metric_card(col, icon: str, label: str, value: str, trend: str = None, trend_dir: str = "flat", accent: str = None):
     trend_html = ""
     if trend:
@@ -596,6 +760,8 @@ def metric_card(col, icon: str, label: str, value: str, trend: str = None, trend
             f"<div><div class='m-value'>{html.escape(value)}</div>{trend_html}</div>",
             "</div>",
         )
+
+
 def metric_card_outline(col, label: str, value: str, trend: str = None, trend_dir: str = "flat"):
     """Varian kartu KPI bergaya OUTLINE (border tipis, tanpa fill warna) -
     dipakai khusus di landing page 'Dashboard Utama', sesuai prototype
@@ -613,6 +779,8 @@ def metric_card_outline(col, label: str, value: str, trend: str = None, trend_di
             trend_html,
             "</div>",
         )
+
+
 def insight_box(title: str, text: str):
     _html(
         "<div class='insight-box'>",
@@ -620,9 +788,13 @@ def insight_box(title: str, text: str):
         f"<div class='insight-text'>{html.escape(text)}</div>",
         "</div>",
     )
+
+
 def panel_title(title: str, subtitle: str = ""):
     sub = f"<div class='panel-sub'>{html.escape(subtitle)}</div>" if subtitle else ""
     _html(f"<div class='panel-title'>{html.escape(title)}</div>", sub)
+
+
 def render_custom_table(df: pd.DataFrame, key: str = "tbl", page_size: int = 10, variant: str = ""):
     """variant: "" (default) atau "yellow" (header kuning + baris hijau
     selang-seling, dipakai untuk tabel NTP di halaman Pertanian sesuai
@@ -641,6 +813,7 @@ def render_custom_table(df: pd.DataFrame, key: str = "tbl", page_size: int = 10,
     start = (current_page - 1) * page_size
     end = min(start + page_size, total_rows)
     df_page = df.iloc[start:end]
+
     thead = "".join(f"<th>{html.escape(str(c))}</th>" for c in df_page.columns)
     rows = []
     for _, row in df_page.iterrows():
@@ -661,8 +834,10 @@ def render_custom_table(df: pd.DataFrame, key: str = "tbl", page_size: int = 10,
                 text = str(val)
             cells.append(f"<td>{html.escape(text)}</td>")
         rows.append("<tr>" + "".join(cells) + "</tr>")
+
     variant_cls = f" tbl-{variant}" if variant else ""
     _html(f"<div class='table-scroll{variant_cls}'><table class='custom-table'><thead><tr>{thead}</tr></thead><tbody>{''.join(rows)}</tbody></table></div>")
+
     if total_pages > 1:
         with st.container(key=f"pager_{key}"):
             c_prev, c_info, c_next = st.columns([1, 5, 1])
@@ -682,10 +857,13 @@ def render_custom_table(df: pd.DataFrame, key: str = "tbl", page_size: int = 10,
                     st.rerun()
     else:
         _html(f"<div style='text-align:center; font-size:0.8rem; opacity:0.6; margin-bottom:6px;'>{total_rows} baris</div>")
+
     st.download_button(
         "📥 Unduh CSV (semua baris)", data=df.to_csv(index=False).encode("utf-8"),
         file_name="data_export.csv", mime="text/csv", use_container_width=True, key=f"dl_{key}",
     )
+
+
 def render_pdrb_table(df: pd.DataFrame):
     """Tabel PDRB dengan header 2 tingkat (Tahun / Nilai PDRB [ADHB, ADHK] /
     Pendapatan per Kapita [ADHB, ADHK]) dan skema warna kuning-biru-pink
@@ -714,6 +892,8 @@ def render_pdrb_table(df: pd.DataFrame):
         f"</thead><tbody>{''.join(rows_html)}</tbody></table></div>"
     )
     _html(table_html)
+
+
 def render_gender_heatmap(years: list, ipg: list, idg: list, ikg: list):
     """Tabel heatmap Indeks-Indeks Gender (baris: IPG/IDG/IKG, kolom: tahun) -
     warna sel dari terang ke gelap sesuai proporsi nilai per baris, sesuai
@@ -734,9 +914,12 @@ def render_gender_heatmap(years: list, ipg: list, idg: list, ikg: list):
             txt_color = "#FFFFFF" if frac > 0.6 else "inherit"
             cells += f"<td style='background-color: rgba(79,134,198,{alpha:.2f}); color:{txt_color};'>{fmt_id(v, 2 if label != 'IKG' else 3)}</td>"
         return f"<tr>{cells}</tr>"
+
     thead = "<th></th>" + "".join(f"<th>{int(y)}</th>" for y in years)
     body = _row("IPG", ipg) + _row("IDG", idg) + _row("IKG", ikg, low_is_good=True)
     _html(f"<div class='table-scroll'><table class='gender-heat-table'><thead><tr>{thead}</tr></thead><tbody>{body}</tbody></table></div>")
+
+
 def trend_info(current, previous):
     if previous is None or pd.isna(previous) or previous == 0 or pd.isna(current):
         return None, "flat"
@@ -744,10 +927,13 @@ def trend_info(current, previous):
     pct = (delta / previous) * 100
     direction = "up" if delta > 0 else ("down" if delta < 0 else "flat")
     return f"{pct:+.2f}% dari periode sebelumnya", direction
+
+
 def section_guard(label: str):
     class _Guard:
         def __enter__(self):
             return self
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_type is None:
                 return False
@@ -765,6 +951,8 @@ def section_guard(label: str):
             )
             return True
     return _Guard()
+
+
 def mini_trend_panel(col, title: str, years: list, values: list, color: str, decimals: int = 2, suffix: str = ""):
     """Panel tren mini dengan titik terakhir dibesarkan - dipakai untuk P0/P1/P2
     (Kemiskinan) dan IPG/IDG/IKG (IPM). Sengaja dipisah per-indikator (bukan
@@ -795,6 +983,8 @@ def mini_trend_panel(col, title: str, years: list, values: list, color: str, dec
             }
             st_echarts(options=opts, height="150px", theme=e_theme)
             _html(f"<div style='text-align:center; font-size:1.3rem; font-weight:800; color:{color};'>{fmt_id(last_val, decimals)}{suffix}</div>")
+
+
 def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_dir: str, spark_labels: list, spark_values: list, color: str, chart_type: str = "line"):
     """Kartu KPI kecil dengan angka besar + badge delta + grafik mini di
     bawahnya - dipakai untuk kartu IHK/Inflasi (halaman Inflasi) dan
@@ -828,6 +1018,8 @@ def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_
                     "series": [series_def],
                 }
                 st_echarts(options=opts, height="70px", theme=e_theme)
+
+
 def sub_nav(options: list, state_key: str) -> str:
     """Daftar tombol Sub-Kategori bertumpuk (bukan dropdown) - sesuai
     prototype: opsi aktif berwarna mauve solid, opsi lain abu-abu muda.
@@ -845,6 +1037,8 @@ def sub_nav(options: list, state_key: str) -> str:
                     st.session_state[state_key] = opt
                     st.rerun()
     return st.session_state[state_key]
+
+
 def ipm_hero_card(tahun: int, value: float, prev_value: float, prev_tahun: int):
     """Kartu KPI besar khusus IPM (beda gaya dari metric_card biasa - lebih
     besar, dengan badge delta di atas angka), sesuai desain prototype."""
@@ -862,6 +1056,8 @@ def ipm_hero_card(tahun: int, value: float, prev_value: float, prev_tahun: int):
         f"<div class='ipm-hero-sub'>dibandingkan {int(prev_tahun)}</div>" if pd.notna(prev_tahun) else "",
         "</div>",
     )
+
+
 # ==============================================================================
 # 6. SIDEBAR
 # ==============================================================================
@@ -884,26 +1080,35 @@ with st.sidebar:
             "<a class='sidebar-caption sidebar-link' href='https://tanahlautkab.bps.go.id' target='_blank' rel='noopener noreferrer'>tanahlautkab.bps.go.id</a>",
             "</div>",
         )
+
     tema_gelap = st.toggle("🌙 Mode Gelap", value=False)
     e_theme = "dark" if tema_gelap else "light"
+
     st.markdown("---")
     _html("<div class='nav-group-title'>Navigasi</div>")
     kategori = st.selectbox(
         "Kategori", ["Dashboard Utama", "Demografi & Sosial", "Ekonomi", "Pertanian"],
         label_visibility="collapsed",
     )
+
     sub_kategori = None
     if kategori == "Demografi & Sosial":
         _html("<div class='nav-group-title'>Sub-Kategori</div>")
         sub_kategori = sub_nav(["Kependudukan", "Tenaga Kerja", "Kemiskinan", "IPM"], "subnav_demografi")
     elif kategori == "Ekonomi":
         _html("<div class='nav-group-title'>Sub-Kategori</div>")
-        sub_kategori = sub_nav(["Inflasi", "Pertumbuhan Ekonomi"], "subnav_ekonomi")
+        sub_kategori = sub_nav(["Inflasi", "Track Record Inflasi", "Pertumbuhan Ekonomi"], "subnav_ekonomi")
     # Pertanian: sengaja tanpa sub-kategori (1 halaman saja) sesuai prototype desain
+
     # Halaman Inflasi butuh filter BERBEDA dari halaman lain: data pendukungnya
     # (Harga mingguan, Komoditas) cuma ada untuk tahun 2026 dan granularitasnya
     # bulanan/mingguan - filter rentang TAHUN tidak relevan di sana, makanya
     # diganti slider rentang BULAN khusus untuk halaman ini.
+    #
+    # Dashboard Utama & Track Record Inflasi TIDAK punya filter rentang waktu
+    # sama sekali di sidebar: Dashboard Utama memang selalu menampilkan data
+    # TERBARU (bukan yang difilter), dan Track Record Inflasi selalu
+    # menampilkan rentang tetap Januari 2024 - Juli 2026 sesuai definisinya.
     bulan_range = None
     if sub_kategori == "Inflasi":
         _html("<div class='nav-group-title'>Rentang Bulan (2026)</div>")
@@ -923,6 +1128,12 @@ with st.sidebar:
             bulan_range = st.select_slider("Rentang Bulan", options=bulan_list, value=(bulan_list[0], bulan_list[-1]), label_visibility="collapsed")
         # f_tahun tetap diisi (fallback penuh) supaya variabel selalu ada walau tidak dipakai halaman ini
         f_tahun = (2016, datetime.datetime.now().year)
+    elif kategori == "Dashboard Utama" or sub_kategori == "Track Record Inflasi":
+        # Tidak ada widget filter yang ditampilkan - kedua halaman ini punya
+        # rentang data yang sudah pasti/otomatis (selalu data terbaru / selalu
+        # Jan 2024-Jul 2026), jadi slider tahun di sini cuma membingungkan
+        # karena tidak benar-benar mengubah apa pun di halamannya.
+        f_tahun = (2016, datetime.datetime.now().year)
     else:
         _html("<div class='nav-group-title'>Rentang Waktu</div>")
         df_bounds, err_bounds = fetch_data("Kependudukan")
@@ -938,9 +1149,11 @@ with st.sidebar:
             # Kependudukan, data terbaru di sheet lain bisa ke-filter hilang tanpa disadari.
             curr_year = max(int(df_bounds["tahun"].max()), datetime.datetime.now().year)
         f_tahun = st.slider("Rentang Tahun", min_year, curr_year, (min_year, curr_year), label_visibility="collapsed")
+
     # Kependudukan butuh df_bounds untuk daftar kecamatan di bawah - pastikan selalu terisi
-    if sub_kategori == "Inflasi":
+    if sub_kategori in ("Inflasi", "Track Record Inflasi") or kategori == "Dashboard Utama":
         df_bounds, _ = fetch_data("Kependudukan")
+
     # Filter wilayah (kecamatan) HANYA relevan untuk halaman Kependudukan -
     # sheet lain tidak punya breakdown per kecamatan, jadi tidak ditampilkan
     # di halaman lain (mengikuti prototype desain).
@@ -957,6 +1170,7 @@ with st.sidebar:
         if st.session_state["kepen_wilayah"] not in list_kecamatan:
             st.session_state["kepen_wilayah"] = "Seluruh Kecamatan"
         filter_kec = st.selectbox("Kecamatan", list_kecamatan, key="kepen_wilayah")
+
     with st.expander("ℹ️ Kamus Istilah"):
         st.caption(
             "**TPT** — Tingkat Pengangguran Terbuka: persentase penduduk usia kerja yang menganggur.\n\n"
@@ -972,13 +1186,17 @@ with st.sidebar:
             "**IPG / IDG / IKG** — Indeks Pembangunan Gender, Indeks Pemberdayaan Gender, Indeks Ketimpangan Gender.\n\n"
             "**NTP** — Nilai Tukar Petani: rasio harga jual hasil pertanian terhadap harga barang yang "
             "dibeli petani. NTP > 100 berarti petani diuntungkan.\n\n"
-            "**Rasio Ketergantungan** — perbandingan penduduk usia nonproduktif terhadap usia produktif."
+            "**Rasio Ketergantungan** — perbandingan penduduk usia nonproduktif terhadap usia produktif.\n\n"
+            "**COICOP** — Classification of Individual Consumption according to Purpose: klasifikasi "
+            "kelompok pengeluaran standar yang dipakai BPS untuk menghitung inflasi per kelompok."
         )
+
     st.markdown("---")
     if st.button("🔄 Refresh Data", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
     _html(f"<div class='sidebar-caption'>Sinkron terakhir: {(datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))).strftime('%d %b %Y, %H:%M')} WITA</div>")
+
     st.markdown("---")
     _html(
         "<div class='sidebar-footer'>",
@@ -988,8 +1206,10 @@ with st.sidebar:
         "<a class='sidebar-footer-link' href='https://instagram.com/bps_tanahlaut' target='_blank' rel='noopener noreferrer'>@bps_tanahlaut (Instagram)</a>",
         "</div>",
     )
+
 inject_css(tema_gelap)
 breadcrumb_path = f"{BREADCRUMB_ICON.get(kategori, '📁')} {kategori}" + (f"  ›  {sub_kategori}" if sub_kategori else "")
+
 # ==============================================================================
 # 7. ROUTER HALAMAN
 # ==============================================================================
@@ -1002,6 +1222,7 @@ if kategori == "Dashboard Utama":
         df_inf = get_df("Inflasi_NTP")
         df_pdrb = get_df("PDRB")
         df_pt = get_df("Pertanian")
+
         if any(d.empty for d in [df_kep, df_tk, df_ki, df_inf, df_pdrb, df_pt]):
             st.warning("Sebagian data belum lengkap untuk menampilkan overview.")
         else:
@@ -1017,27 +1238,28 @@ if kategori == "Dashboard Utama":
             row_inf = df_inf_sorted.iloc[-1] if not df_inf_sorted.empty else None
             df_padi = df_pt[df_pt["komoditas"].str.lower() == "padi"].sort_values("tahun")
             row_padi = df_padi.iloc[-1] if not df_padi.empty else None
+
             with st.container(border=True):
                 panel_title("🗺️ Peta Wilayah Kabupaten Tanah Laut", "Arahkan kursor ke setiap kecamatan untuk melihat jumlah penduduk")
                 geo_data = load_geojson()
                 df_map = df_kep[(df_kep["tahun"] == t_max) & (df_kep["kecamatan"].str.lower() != "tanah laut")]
                 if geo_data and not df_map.empty:
                     map_data = [{"name": r["kecamatan"], "value": r["jumlah_penduduk"], "pddk": r["jumlah_penduduk"]} for _, r in df_map.iterrows()]
-                    
+
                     # Hitung nilai minimum dan maksimum jumlah penduduk untuk skala gradasi
                     pddk_vals = [d["value"] for d in map_data if pd.notna(d["value"])]
                     vmin = min(pddk_vals) if pddk_vals else 0
                     vmax = max(pddk_vals) if pddk_vals else 100000
-                
+
                     # Penyesuaian batas wilayah & gradasi warna (Terang -> Gelap)
                     map_border = "#94A3B8" if tema_gelap else "#64748B"
                     # Warna gradasi: Terang (penduduk sedikit) ke Gelap (penduduk banyak)
                     gradasi_warna = ["#EEE3CB", "#B0BA99", "#9D6638"] if tema_gelap else ["#E8DFCA", "#CFAB8D", "#B87C4C"]
-                    
+
                     map_opts = {
                         "backgroundColor": "transparent",
                         "tooltip": {
-                            "trigger": "item", 
+                            "trigger": "item",
                             "formatter": JsCode(
                                 "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
                                 "return '<b>'+p.name+'</b><br/>Jumlah Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
@@ -1057,14 +1279,14 @@ if kategori == "Dashboard Utama":
                             "itemHeight": 90
                         },
                         "series": [{
-                            "type": "map", 
-                            "map": "TALA", 
-                            "roam": False, 
+                            "type": "map",
+                            "map": "TALA",
+                            "roam": False,
                             "label": {"show": False},
                             # Hapus areaColor di itemStyle agar diatur penuh oleh visualMap
                             "itemStyle": {"borderColor": map_border, "borderWidth": 1.5},
                             "emphasis": {
-                                "label": {"show": True}, 
+                                "label": {"show": True},
                                 "itemStyle": {"areaColor": ACCENT, "borderColor": map_border, "borderWidth": 1.5}
                             },
                             "data": map_data,
@@ -1073,33 +1295,35 @@ if kategori == "Dashboard Utama":
                     st_echarts(options=map_opts, map=Map("TALA", geo_data), height="480px", theme=e_theme)
                 else:
                     st.info("🗺️ Sistem spasial siap. Letakkan berkas `tanah_laut.geojson` sejajar dengan script.")
+
             st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
             panel_title("📌 Indikator Kunci")
-           
+
             # 1. Ambil tahun/bulan dari data masing-masing indikator
             th_kep = f" {int(row_kep['tahun'])}" if row_kep is not None and pd.notna(row_kep.get("tahun")) else ""
             th_tk = f" {int(row_tk['tahun'])}" if row_tk is not None and pd.notna(row_tk.get("tahun")) else ""
             th_ki = f" {int(row_ki['tahun'])}" if row_ki is not None and pd.notna(row_ki.get("tahun")) else ""
             th_pdrb = f" {int(row_pdrb['tahun'])}" if row_pdrb is not None and pd.notna(row_pdrb.get("tahun")) else ""
             th_padi = f" {int(row_padi['tahun'])}" if row_padi is not None and pd.notna(row_padi.get("tahun")) else ""
-            
+
             # Khusus Inflasi: Ambil Bulan & Tahun (contoh: "Juli 2026")
             bln_inf = f" {row_inf['bulan']} {int(row_inf['tahun'])}" if row_inf is not None and pd.notna(row_inf.get("bulan")) else ""
-            
+
             # 2. Baris Pertama KPI (4 Kolom)
             r1 = st.columns(4)
             metric_card_outline(r1[0], f"Jumlah Penduduk{th_kep}", fmt_id(row_kep["jumlah_penduduk"]) if row_kep is not None else "-")
             metric_card_outline(r1[1], f"Tingkat Pengangguran Terbuka{th_tk}", f"{row_tk['tpt']:g}%" if row_tk is not None and pd.notna(row_tk["tpt"]) else "-")
             metric_card_outline(r1[2], f"Persentase Penduduk Miskin{th_ki}", f"{row_ki['p0']:g}%" if row_ki is not None and pd.notna(row_ki["p0"]) else "-")
             metric_card_outline(r1[3], f"Indeks Pembangunan Manusia{th_ki}", fmt_id(row_ki["ipm"], 2) if row_ki is not None and pd.notna(row_ki["ipm"]) else "-")
-            
+
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-            
+
             # 3. Baris Kedua KPI (3 Kolom)
             r2 = st.columns(3)
             metric_card_outline(r2[0], f"Inflasi (y-on-y){bln_inf}", f"{row_inf['inflasi_yoy']:g}%" if row_inf is not None and pd.notna(row_inf["inflasi_yoy"]) else "-")
             metric_card_outline(r2[1], f"Pertumbuhan Ekonomi{th_pdrb}", f"{row_pdrb['pert_eko']:g}%" if row_pdrb is not None and pd.notna(row_pdrb["pert_eko"]) else "-")
             metric_card_outline(r2[2], f"Luas Panen Padi{th_padi}", f"{fmt_id(row_padi['luas_panen'])} Ha" if row_padi is not None else "-")
+
 elif sub_kategori == "Kependudukan":
     page_header("👥", "Kependudukan", breadcrumb_path)
     with section_guard("Kependudukan"):
@@ -1110,6 +1334,7 @@ elif sub_kategori == "Kependudukan":
             target_kec = "tanah laut" if filter_kec in (None, "Seluruh Kecamatan") else filter_kec.lower()
             label_wilayah = "Seluruh Kecamatan" if target_kec == "tanah laut" else filter_kec
             _html(f"<div class='chip'>📍 {html.escape(label_wilayah)}</div>")
+
             df_target = df_d[df_d["kecamatan"].str.lower() == target_kec].sort_values("tahun")
             if df_target.empty:
                 st.warning(f"Tidak ada data untuk wilayah '{filter_kec}'.")
@@ -1131,6 +1356,7 @@ elif sub_kategori == "Kependudukan":
                             ],
                         }
                         kep_click = st_echarts(options=kep_opts, height="380px", key="kep_line", theme=e_theme, on_select="rerun", selection_mode="points")
+
                 if "kepen_tahun_aktif" not in st.session_state or st.session_state["kepen_tahun_aktif"] not in years_k:
                     st.session_state["kepen_tahun_aktif"] = years_k[-1]
                 if kep_click and "selection" in kep_click and kep_click["selection"].get("point_indices"):
@@ -1138,13 +1364,16 @@ elif sub_kategori == "Kependudukan":
                     if idx < len(years_k):
                         st.session_state["kepen_tahun_aktif"] = years_k[idx]
                 t_aktif_k = st.session_state["kepen_tahun_aktif"]
+
                 row_series = df_target[df_target["tahun"] == t_aktif_k]
                 row_target = row_series.iloc[0] if not row_series.empty else df_target.iloc[-1]
                 prev_series = df_target[df_target["tahun"] < t_aktif_k]
                 pddk_now, dir_now = trend_info(row_target["jumlah_penduduk"], prev_series["jumlah_penduduk"].iloc[-1] if not prev_series.empty else None)
+
                 with c_insight:
                     if pddk_now:
                         insight_box("Interpretasi", f"Populasi {label_wilayah} pada {int(t_aktif_k)} {'naik' if dir_now == 'up' else 'turun'} {pddk_now}.")
+
                 c_map, c_gender, c_rasio = st.columns([1.1, 1.2, 0.8])
                 map_click = None
                 map_data = []
@@ -1178,6 +1407,7 @@ elif sub_kategori == "Kependudukan":
                                 st.info("Data kepadatan belum tersedia untuk tahun ini.")
                         else:
                             st.info("🗺️ Sistem spasial siap. Letakkan berkas `tanah_laut.geojson` sejajar dengan script.")
+
                 if map_click and "selection" in map_click and map_click["selection"].get("point_indices") and map_data:
                     idx = map_click["selection"]["point_indices"][0]
                     if idx < len(map_data):
@@ -1185,6 +1415,7 @@ elif sub_kategori == "Kependudukan":
                         if st.session_state.get("kepen_wilayah") != clicked_name:
                             st.session_state["kepen_wilayah_pending"] = clicked_name
                             st.rerun()
+
                 with c_gender:
                     with st.container(border=True):
                         panel_title("Penduduk Berdasarkan Jenis Kelamin")
@@ -1200,6 +1431,7 @@ elif sub_kategori == "Kependudukan":
                             ],
                         }
                         st_echarts(options=gender_opts, height="360px", key="kep_gender", theme=e_theme)
+
                 with c_rasio:
                     with st.container(border=True):
                         panel_title(f"Rasio Jenis Kelamin {int(t_aktif_k)}")
@@ -1210,10 +1442,12 @@ elif sub_kategori == "Kependudukan":
                             f"<div style='font-size:0.8rem; color:#888; margin-top:8px;'>Terdapat sekitar {fmt_id(rasio, 0)} "
                             f"penduduk laki-laki untuk setiap 100 penduduk perempuan.</div></div>"
                         )
+
                 df_disp = df_target[["tahun", "jumlah_penduduk", "lk", "pr", "kepadatan", "pertumbuhan"]].rename(
                     columns={"tahun": "Tahun", "jumlah_penduduk": "Total Penduduk", "lk": "Laki-laki", "pr": "Perempuan", "kepadatan": "Kepadatan", "pertumbuhan": "Pertumbuhan (%)"}
                 )
                 render_custom_table(df_disp.sort_values("Tahun", ascending=False), key="kependudukan")
+
 elif sub_kategori == "Tenaga Kerja":
     page_header("💼", "Tenaga Kerja", breadcrumb_path)
     with section_guard("Tenaga Kerja"):
@@ -1238,6 +1472,7 @@ elif sub_kategori == "Tenaga Kerja":
                         ],
                     }
                     tk_click = st_echarts(options=tk_opts, height="380px", key="tk_line", theme=e_theme, on_select="rerun", selection_mode="points")
+
             if "tk_tahun_aktif" not in st.session_state or st.session_state["tk_tahun_aktif"] not in years_tk:
                 st.session_state["tk_tahun_aktif"] = years_tk[-1]
             if tk_click and "selection" in tk_click and tk_click["selection"].get("point_indices"):
@@ -1245,10 +1480,13 @@ elif sub_kategori == "Tenaga Kerja":
                 if idx < len(years_tk):
                     st.session_state["tk_tahun_aktif"] = years_tk[idx]
             t_aktif_tk = st.session_state["tk_tahun_aktif"]
+
             row_series = df_tk[df_tk["tahun"] == t_aktif_tk]
             row_tk = row_series.iloc[0] if not row_series.empty else df_tk.iloc[-1]
+
             with c_insight:
                 insight_box("Interpretasi", f"Pada {int(t_aktif_tk)}, TPT tercatat {row_tk['tpt']:g}% dan TPAK {row_tk['tpak']:g}%.")
+
             c_donut, c_stack, c_rasio = st.columns([1, 1.4, 0.8])
             donut_click = None
             donut_labels = ["Angkatan Kerja", "Bukan Angkatan Kerja"]
@@ -1269,6 +1507,7 @@ elif sub_kategori == "Tenaga Kerja":
                     }
                     donut_click = st_echarts(options=donut_opts, height="220px", key="tk_donut", theme=e_theme, on_select="rerun", selection_mode="points")
                     _html(f"<div class='donut-center'><div class='dc-label'>Angkatan Kerja</div><div class='dc-value'>{tpak_val:g}%</div></div>")
+
             if "tk_kategori_aktif" not in st.session_state:
                 st.session_state["tk_kategori_aktif"] = "Angkatan Kerja"
             if donut_click and "selection" in donut_click and donut_click["selection"].get("point_indices"):
@@ -1276,6 +1515,7 @@ elif sub_kategori == "Tenaga Kerja":
                 if idx < len(donut_labels):
                     st.session_state["tk_kategori_aktif"] = donut_labels[idx]
             kategori_aktif_tk = st.session_state["tk_kategori_aktif"]
+
             with c_stack:
                 with st.container(border=True):
                     if kategori_aktif_tk == "Angkatan Kerja":
@@ -1300,6 +1540,7 @@ elif sub_kategori == "Tenaga Kerja":
                         "series": stack_series,
                     }
                     st_echarts(options=stack_opts, height="280px", key="tk_stack", theme=e_theme)
+
             with c_rasio:
                 with st.container(border=True):
                     panel_title(f"Rasio Ketergantungan {int(t_aktif_tk)}")
@@ -1310,10 +1551,12 @@ elif sub_kategori == "Tenaga Kerja":
                         f"<div style='font-size:0.78rem; color:#888; margin-top:8px;'>Setiap 100 penduduk usia produktif "
                         f"menanggung sekitar {fmt_id(rk, 0)} penduduk usia nonproduktif.</div></div>"
                     )
+
             df_disp = df_tk[["tahun", "tpt", "tpak", "bekerja", "pengangguran", "r_ketergantungan"]].rename(
                 columns={"tahun": "Tahun", "tpt": "TPT (%)", "tpak": "TPAK (%)", "bekerja": "Bekerja (%)", "pengangguran": "Pengangguran (%)", "r_ketergantungan": "Rasio Ketergantungan"}
             )
             render_custom_table(df_disp.sort_values("Tahun", ascending=False), key="tenaga_kerja")
+
 elif sub_kategori == "Kemiskinan":
     page_header("📉", "Kemiskinan", breadcrumb_path)
     with section_guard("Kemiskinan"):
@@ -1350,14 +1593,17 @@ elif sub_kategori == "Kemiskinan":
                     panel_title(f"Rasio Gini {int(row_gini['tahun'])}")
                     _html(f"<div style='text-align:center; padding:16px 0;'><div style='font-size:2.3rem; font-weight:800; color:{PRIMARY};'>{fmt_id(row_gini['gini'], 3)}</div></div>")
                     st.caption("Koefisien Gini yang semakin mendekati 0 berarti mendekati pemerataan sempurna, sedangkan semakin mendekati 1 berarti ketimpangan sempurna.")
+
             c_p0, c_p1, c_p2 = st.columns(3)
             mini_trend_panel(c_p0, "Persentase Penduduk Miskin (P0)", years_m, df_k["p0"].tolist(), COLORS[0], decimals=2, suffix="%")
             mini_trend_panel(c_p1, "Indeks Kedalaman Kemiskinan (P1)", years_m, df_k["p1"].tolist(), COLORS[1], decimals=2)
             mini_trend_panel(c_p2, "Indeks Keparahan Kemiskinan (P2)", years_m, df_k["p2"].tolist(), COLORS[3], decimals=2)
+
             df_disp = df_k[["tahun", "p0", "p1", "p2", "jml_miskin", "garis_kemiskinan", "gini"]].rename(
                 columns={"tahun": "Tahun", "p0": "P0 (%)", "p1": "P1", "p2": "P2", "jml_miskin": "Jumlah (Jiwa)", "garis_kemiskinan": "Garis Kemiskinan (Rp)", "gini": "Rasio Gini"}
             )
             render_custom_table(df_disp.sort_values("Tahun", ascending=False), key="kemiskinan")
+
 elif sub_kategori == "IPM":
     page_header("📚", "Indeks Pembangunan Manusia (IPM)", breadcrumb_path)
     with section_guard("IPM"):
@@ -1378,14 +1624,17 @@ elif sub_kategori == "IPM":
                             prev_i["ipm"] if prev_i is not None else np.nan,
                             prev_i["tahun"] if prev_i is not None else np.nan,
                         )
+
             sparkline_kpi_card(c_uhh, "UHH", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0])
             sparkline_kpi_card(c_hls, "HLS", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0])
             sparkline_kpi_card(c_rls, "RLS", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0])
             sparkline_kpi_card(c_peng, "Pengeluaran/Kapita", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0])
+
             if not df_i_valid.empty:
                 gap = last_i["ipm"] - last_i["ipm_kalsel"] if pd.notna(last_i.get("ipm_kalsel")) else None
                 gap_txt = f" — {'melampaui' if gap > 0 else 'di bawah'} rata-rata provinsi sebesar {abs(gap):.2f} poin." if gap is not None else "."
                 insight_box("Interpretasi", f"IPM Kabupaten Tanah Laut pada {int(last_i['tahun'])} sebesar {last_i['ipm']:g}{gap_txt}")
+
             with st.container(border=True):
                 panel_title("Perbandingan IPM Tanah Laut dan Kalimantan Selatan")
                 ipm_opts = {
@@ -1399,6 +1648,7 @@ elif sub_kategori == "IPM":
                     ],
                 }
                 st_echarts(options=ipm_opts, height="380px", key="ipm_bar", theme=e_theme)
+
             c_heat, c_g_insight = st.columns([1.6, 1])
             with c_heat:
                 with st.container(border=True):
@@ -1414,10 +1664,12 @@ elif sub_kategori == "IPM":
                         "ekonomi dan politik.\n\n"
                         "**IKG** yang semakin menjauhi 1 menunjukkan ketimpangan gender semakin berkurang."
                     )
+
             df_disp = df_i[["tahun", "ipm", "ipm_kalsel", "uhh", "hls", "rls", "pengeluaran"]].rename(
                 columns={"tahun": "Tahun", "ipm": "IPM Tala", "ipm_kalsel": "IPM Kalsel", "uhh": "UHH", "hls": "HLS", "rls": "RLS", "pengeluaran": "Pengeluaran/Kapita Disesuaikan (Ribu Rupiah)"}
             )
             render_custom_table(df_disp.sort_values("Tahun", ascending=False), key="ipm")
+
 elif sub_kategori == "Inflasi":
     page_header("🛒", "Inflasi", breadcrumb_path, "Perkembangan Indeks Harga Konsumen Kabupaten Tanah Laut")
     with section_guard("Inflasi"):
@@ -1430,16 +1682,19 @@ elif sub_kategori == "Inflasi":
             df_2026 = df_2026.sort_values("bulan_idx")
             i0, i1 = BULAN_URUT.index(bulan_range[0]), BULAN_URUT.index(bulan_range[1])
             df_f = df_2026[(df_2026["bulan_idx"] >= i0) & (df_2026["bulan_idx"] <= i1)]
+
             if df_f.empty:
                 st.warning("Tidak ada data untuk rentang bulan yang dipilih.")
             else:
                 last_row = df_f.iloc[-1]
                 prev_row = df_f.iloc[-2] if len(df_f) > 1 else None
+
                 def _delta(col):
                     if prev_row is None or pd.isna(last_row[col]) or pd.isna(prev_row[col]) or prev_row[col] == 0:
                         return None, "flat"
                     d = last_row[col] - prev_row[col]
                     return f"{d:+.2f}%", ("up" if d > 0 else ("down" if d < 0 else "flat"))
+
                 c1, c2, c3, c4 = st.columns(4)
                 dtxt, ddir = _delta("ihk")
                 sparkline_kpi_card(c1, "Indeks Harga Konsumen", fmt_id(last_row["ihk"], 2), dtxt, ddir, df_f["bulan"].tolist(), df_f["ihk"].tolist(), COLORS[2], chart_type="bar")
@@ -1449,60 +1704,92 @@ elif sub_kategori == "Inflasi":
                 sparkline_kpi_card(c3, "Inflasi Year-to-Date", f"{last_row['inflasi_ytd']:g}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_ytd"].tolist(), COLORS[1])
                 dtxt, ddir = _delta("inflasi_yoy")
                 sparkline_kpi_card(c4, "Inflasi Year-on-Year", f"{last_row['inflasi_yoy']:g}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_yoy"].tolist(), COLORS[2])
+
                 insight_box(
                     "Interpretasi",
                     f"Pada {last_row['bulan']} 2026, IHK Kabupaten Tanah Laut tercatat {last_row['ihk']:g} dengan inflasi "
                     f"bulanan (mtm) {last_row['inflasi_mtm']:g}%, inflasi tahun berjalan (ytd) {last_row['inflasi_ytd']:g}%, "
                     f"dan inflasi tahunan (yoy) {last_row['inflasi_yoy']:g}%.",
                 )
-                # Mekanisme sesuai penjelasan: untuk tiap bulan (Jan s.d. bulan berjalan),
-                # ranking komoditas berdasar Andil M-to-M (descending utk pendorong, ascending
-                # utk penahan), ambil top 10, lalu hitung berapa kali tiap komoditas nongol di
-                # top-10 sepanjang tahun berjalan (frekuensi). Cuma yang frekuensi >= 3 yang
-                # ditampilkan sbg bubble - makanya chart ini baru bisa muncul mulai bulan Maret.
+
+                # ---- Kotak dokumen PDF Bahan Rilis Inflasi ----
+                with st.container(border=True):
+                    panel_title("📄 Bahan Rilis Berita Resmi Statistik (BRS) Inflasi", "Dokumen resmi rilis inflasi bulanan Kabupaten Tanah Laut")
+                    pdf_bytes = load_pdf_bytes()
+                    pdf_href = PDF_RILIS_URL.strip() if PDF_RILIS_URL.strip() else None
+                    if not pdf_href and pdf_bytes:
+                        pdf_href = f"data:application/pdf;base64,{base64.b64encode(pdf_bytes).decode()}"
+                    if pdf_href:
+                        _html(
+                            f"<a class='pdf-card' href='{pdf_href}' target='_blank' rel='noopener noreferrer'>",
+                            "<div class='pdf-card-icon'>📄</div>",
+                            "<div><p class='pdf-card-title'>Buka Dokumen Rilis Inflasi</p>"
+                            "<p class='pdf-card-sub'>Klik untuk membuka PDF di tab baru (desktop) / pembuka PDF (HP) — tanpa perlu diunduh</p></div>",
+                            "</a>",
+                        )
+                        if pdf_bytes:
+                            st.download_button(
+                                "📥 Unduh PDF Rilis Inflasi (cadangan)", data=pdf_bytes,
+                                file_name="Rilis_Inflasi_Tanah_Laut.pdf", mime="application/pdf",
+                                use_container_width=True, key="dl_pdf_rilis",
+                            )
+                    else:
+                        st.info(
+                            "📄 Dokumen rilis inflasi belum tersedia. Letakkan berkas `rilis_inflasi.pdf` sejajar "
+                            "dengan `app.py` (atau isi `PDF_RILIS_URL` di secrets) untuk mengaktifkan fitur ini."
+                        )
+
+                # Mekanisme: untuk tiap bulan (Jan s.d. bulan berjalan), ranking komoditas
+                # berdasar Andil M-to-M (descending utk pendorong, ascending utk penahan),
+                # ambil top 10, lalu hitung berapa kali tiap komoditas nongol di top-10
+                # sepanjang tahun berjalan (frekuensi). Cuma yang frekuensi >= 3 yang
+                # ditampilkan sbg bubble - makanya chart ini baru bisa muncul mulai Maret.
                 #
-                # Sumbu-X = rata-rata IHK (Indeks Harga Konsumen KABUPATEN, dari sheet
-                # Inflasi_NTP kolom 'ihk') pada bulan-bulan saat komoditas itu masuk top-10 -
-                # BUKAN IHK per-komoditas (data itu tidak ada di sheet manapun, sudah dicek).
-                # Sumbu-Y tetap Andil M-to-M komoditas itu di bulan berjalan.
-                bulan_ihk_map = dict(zip(df_2026["bulan"], df_2026["ihk"]))
+                # Sumbu-X = IHK PER KOMODITAS (sheet "IHK Komoditas") pada BULAN BERJALAN -
+                # bukan rata-rata, bukan IHK gabungan Tanah Laut - supaya apple to apple
+                # dengan sumbu-Y (Andil M-to-M komoditas itu, juga bulan berjalan).
                 df_kom = get_komoditas()
+                df_ihk_kom = get_ihk_komoditas()
                 bulan_aktif = last_row["bulan"]
                 bulan_cols_sofar = [b for b in BULAN_URUT if b in df_kom.columns and BULAN_URUT.index(b) <= BULAN_URUT.index(bulan_aktif)] if not df_kom.empty else []
+
+                bubble_pendorong, bubble_penahan = [], []
                 if len(bulan_cols_sofar) < 3:
                     st.info(f"📊 Analisis Top 10 komoditas butuh minimal 3 bulan data tahun berjalan - baru bisa ditampilkan mulai Maret 2026 (saat ini: {bulan_aktif}).")
                 else:
-                    pendorong_freq, pendorong_ihk = {}, {}
-                    penahan_freq, penahan_ihk = {}, {}
+                    pendorong_freq, penahan_freq = {}, {}
                     for b in bulan_cols_sofar:
                         col_valid = df_kom[["komoditas", b]].dropna()
-                        ihk_b = bulan_ihk_map.get(b)
                         for _, r in col_valid.sort_values(b, ascending=False).head(10).iterrows():
                             pendorong_freq[r["komoditas"]] = pendorong_freq.get(r["komoditas"], 0) + 1
-                            if pd.notna(ihk_b):
-                                pendorong_ihk.setdefault(r["komoditas"], []).append(ihk_b)
                         for _, r in col_valid.sort_values(b, ascending=True).head(10).iterrows():
                             penahan_freq[r["komoditas"]] = penahan_freq.get(r["komoditas"], 0) + 1
-                            if pd.notna(ihk_b):
-                                penahan_ihk.setdefault(r["komoditas"], []).append(ihk_b)
-                    def _build_bubbles(freq_dict, ihk_dict, min_freq=3):
+
+                    def _build_bubbles(freq_dict, min_freq=3):
                         out = []
                         for kom, freq in freq_dict.items():
-                            if freq < min_freq or kom not in ihk_dict or not ihk_dict[kom]:
+                            if freq < min_freq:
                                 continue
-                            avg_ihk = sum(ihk_dict[kom]) / len(ihk_dict[kom])
-                            cur = df_kom.loc[df_kom["komoditas"] == kom, bulan_aktif]
-                            cur_val = cur.iloc[0] if not cur.empty and pd.notna(cur.iloc[0]) else None
-                            if cur_val is not None:
-                                out.append({"name": kom, "value": [round(avg_ihk, 2), round(cur_val, 4), freq]})
+                            cur_andil = df_kom.loc[df_kom["komoditas"] == kom, bulan_aktif]
+                            andil_val = cur_andil.iloc[0] if not cur_andil.empty and pd.notna(cur_andil.iloc[0]) else None
+                            ihk_val = None
+                            if not df_ihk_kom.empty and bulan_aktif in df_ihk_kom.columns:
+                                cur_ihk = df_ihk_kom.loc[df_ihk_kom["komoditas"] == kom, bulan_aktif]
+                                if not cur_ihk.empty and pd.notna(cur_ihk.iloc[0]):
+                                    ihk_val = cur_ihk.iloc[0]
+                            if andil_val is not None and ihk_val is not None:
+                                out.append({"name": kom, "value": [round(ihk_val, 2), round(andil_val, 4), freq]})
                         return out
-                    bubble_pendorong = _build_bubbles(pendorong_freq, pendorong_ihk)
-                    bubble_penahan = _build_bubbles(penahan_freq, penahan_ihk)
+
+                    bubble_pendorong = _build_bubbles(pendorong_freq)
+                    bubble_penahan = _build_bubbles(penahan_freq)
+
                     size_js = JsCode("function(val){ return Math.max(14, val[2] * 7); }")
                     tooltip_js = JsCode(
-                        "function(p){return '<b>'+p.data.name+'</b><br/>Rata-rata IHK saat Top 10: '+p.data.value[0]+"
+                        "function(p){return '<b>'+p.data.name+'</b><br/>IHK Bulan Berjalan: '+p.data.value[0]+"
                         "'<br/>Andil bulan berjalan: '+p.data.value[1]+'%<br/>Frekuensi Top 10: '+p.data.value[2]+'x';}"
                     )
+
                     c_dorong, c_tahan = st.columns(2)
                     with c_dorong:
                         with st.container(border=True):
@@ -1530,6 +1817,32 @@ elif sub_kategori == "Inflasi":
                                 st_echarts(options=opts, height="380px", key="inf_bubble_penahan", theme=e_theme)
                             else:
                                 st.info("Belum ada komoditas dengan frekuensi Top 10 >= 3x.")
+
+                    # Interpretasi otomatis - dibuat AMAN terhadap kondisi filter yang
+                    # membuat salah satu (atau bahkan kedua) bubble chart kosong: setiap
+                    # bagian kalimat cuma ditambahkan kalau list bubble-nya memang berisi,
+                    # jadi tidak ada indexing ke list kosong yang bisa memicu error.
+                    if bubble_pendorong or bubble_penahan:
+                        kalimat = []
+                        if bubble_pendorong:
+                            top_p = sorted(bubble_pendorong, key=lambda d: d["value"][1], reverse=True)[0]
+                            kalimat.append(
+                                f"komoditas {top_p['name'].title()} menjadi pendorong utama dengan andil "
+                                f"{top_p['value'][1]:g}% dan IHK {fmt_id(top_p['value'][0], 2)} (masuk Top 10 "
+                                f"sebanyak {top_p['value'][2]}x sepanjang tahun berjalan)"
+                            )
+                        if bubble_penahan:
+                            top_t = sorted(bubble_penahan, key=lambda d: d["value"][1])[0]
+                            kalimat.append(
+                                f"sementara {top_t['name'].title()} menjadi penahan utama dengan andil "
+                                f"{top_t['value'][1]:g}% dan IHK {fmt_id(top_t['value'][0], 2)} (masuk Top 10 "
+                                f"sebanyak {top_t['value'][2]}x)"
+                            )
+                        insight_box(
+                            "Interpretasi Komoditas Pendorong & Penahan Inflasi",
+                            f"Pada {bulan_aktif} 2026, " + "; ".join(kalimat) + ".",
+                        )
+
                 df_harga = apply_filter(get_df("Harga"), (2026, 2026))
                 if not df_harga.empty:
                     df_harga = df_harga.copy()
@@ -1563,10 +1876,84 @@ elif sub_kategori == "Inflasi":
                         st.info("Tidak ada data harga untuk rentang bulan ini.")
                 else:
                     st.info("Data harga mingguan belum tersedia.")
+
                 df_disp = df_f[["bulan", "ihk", "inflasi_mtm", "inflasi_ytd", "inflasi_yoy"]].rename(
                     columns={"bulan": "Bulan", "ihk": "IHK", "inflasi_mtm": "MtM (%)", "inflasi_ytd": "YtD (%)", "inflasi_yoy": "YoY (%)"}
                 )
                 render_custom_table(df_disp.iloc[::-1], key="inflasi")
+
+elif sub_kategori == "Track Record Inflasi":
+    page_header("📊", "Track Record Inflasi", breadcrumb_path, "Rekam Jejak Inflasi Kabupaten Tanah Laut, Januari 2024 - Juli 2026")
+    with section_guard("Track Record Inflasi"):
+        df_tr = get_df("Inflasi_NTP")
+        if df_tr.empty:
+            st.warning("Data inflasi tidak tersedia.")
+        else:
+            df_tr = df_tr.copy()
+            df_tr["bulan_idx"] = df_tr["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
+            df_tr = df_tr[df_tr["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
+            labels_tr = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_tr["bulan"], df_tr["tahun"])]
+
+            with st.container(border=True):
+                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", "Januari 2024 - Juli 2026")
+                opts_multi = {
+                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                    "legend": {"bottom": 0},
+                    "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
+                    "xAxis": {"type": "category", "data": labels_tr, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
+                    "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
+                    "series": [
+                        {"name": "MtM", "type": "line", "data": df_tr["inflasi_mtm"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[0]}, "lineStyle": {"width": 2}, "symbolSize": 4},
+                        {"name": "YtD", "type": "line", "data": df_tr["inflasi_ytd"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[1]}, "lineStyle": {"width": 2}, "symbolSize": 4},
+                        {"name": "YoY", "type": "line", "data": df_tr["inflasi_yoy"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[3]}, "lineStyle": {"width": 2.5}, "symbolSize": 4},
+                    ],
+                }
+                st_echarts(options=opts_multi, height="400px", key="tr_inflasi_line", theme=e_theme)
+
+            with st.container(border=True):
+                panel_title("Indeks Harga Konsumen (IHK)", "Januari 2024 - Juli 2026")
+                opts_ihk = {
+                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                    "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
+                    "xAxis": {"type": "category", "data": labels_tr, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
+                    "yAxis": {"type": "value", "scale": True},
+                    "series": [{"name": "IHK", "type": "line", "data": df_tr["ihk"].round(2).tolist(), "smooth": True, "areaStyle": {"opacity": 0.12}, "itemStyle": {"color": COLORS[2]}, "lineStyle": {"width": 3}, "symbolSize": 4}],
+                }
+                st_echarts(options=opts_ihk, height="340px", key="tr_ihk_line", theme=e_theme)
+
+            with st.container(border=True):
+                panel_title("Inflasi Year-on-Year Berdasarkan Kelompok Pengeluaran", "Pilih maksimal 3 kelompok untuk dibandingkan (sumber: sheet Inflasi_COICOP22)")
+                df_coicop = get_coicop()
+                if df_coicop.empty:
+                    st.info("Data inflasi per kelompok pengeluaran (sheet Inflasi_COICOP22) belum tersedia.")
+                else:
+                    df_coicop = df_coicop.copy()
+                    df_coicop["bulan_idx"] = df_coicop["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
+                    df_coicop = df_coicop[df_coicop["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
+                    kategori_cols = [c for c in df_coicop.columns if c not in ("tahun", "bulan", "bulan_idx")]
+                    pilihan = st.multiselect(
+                        "Kelompok Pengeluaran", kategori_cols, default=kategori_cols[:1],
+                        max_selections=3, key="coicop_pilihan",
+                        help="Maksimal 3 kelompok bisa dipilih sekaligus supaya grafik tetap terbaca.",
+                    )
+                    if not pilihan:
+                        st.info("Pilih minimal 1 kelompok pengeluaran untuk menampilkan grafik.")
+                    else:
+                        labels_co = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_coicop["bulan"], df_coicop["tahun"])]
+                        series_co = [
+                            {"name": k, "type": "line", "data": df_coicop[k].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[i % len(COLORS)]}, "lineStyle": {"width": 2.5}, "symbolSize": 4}
+                            for i, k in enumerate(pilihan)
+                        ]
+                        opts_co = {
+                            "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                            "legend": {"bottom": 0, "type": "scroll", "textStyle": {"fontSize": 10}},
+                            "grid": {"top": "8%", "bottom": "20%", "left": "6%", "right": "4%", "containLabel": True},
+                            "xAxis": {"type": "category", "data": labels_co, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
+                            "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
+                            "series": series_co,
+                        }
+                        st_echarts(options=opts_co, height="420px", key="tr_coicop_line", theme=e_theme)
+
 elif sub_kategori == "Pertumbuhan Ekonomi":
     page_header("📈", "Pertumbuhan Ekonomi", breadcrumb_path)
     with section_guard("Pertumbuhan Ekonomi"):
@@ -1588,12 +1975,14 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
                     ],
                 }
                 pdrb_click = st_echarts(options=growth_opts, height="400px", key="pdrb_growth", theme=e_theme, on_select="rerun", selection_mode="points")
+
             if "pdrb_tahun_aktif" not in st.session_state or st.session_state["pdrb_tahun_aktif"] not in years_p:
                 st.session_state["pdrb_tahun_aktif"] = years_p[-1]
             if pdrb_click and "selection" in pdrb_click and pdrb_click["selection"].get("point_indices"):
                 idx = pdrb_click["selection"]["point_indices"][0] % len(years_p)
                 st.session_state["pdrb_tahun_aktif"] = years_p[idx]
             t_aktif_p = st.session_state["pdrb_tahun_aktif"]
+
             row_p_series = df_p[df_p["tahun"] == t_aktif_p]
             row_p = row_p_series.iloc[0] if not row_p_series.empty else df_p.iloc[-1]
             insight_box(
@@ -1601,6 +1990,7 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
                 f"Ekonomi Tanah Laut tumbuh {row_p['pert_eko']:.2f}% pada {int(t_aktif_p)}, dengan PDRB per kapita "
                 f"(ADHK) sebesar Rp {fmt_id(row_p['pdptn_perkapita_adhk'])} ribu.",
             )
+
             def _donut_grouped(df_kat, top_n=5):
                 d = df_kat.sort_values("pangsa", ascending=False)
                 top = d.head(top_n)
@@ -1609,6 +1999,7 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
                 if sisanya > 0.01:
                     data.append({"name": "Lainnya", "value": round(sisanya, 2)})
                 return data
+
             df_dist = get_dist_pdrb()
             c_d1, c_d2 = st.columns(2)
             if not df_dist.empty:
@@ -1635,12 +2026,14 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
                                 st_echarts(options=opts, height="360px", key=chart_key, theme=e_theme)
             else:
                 st.info("Data distribusi PDRB (sheet Dist_PDRB) belum tersedia.")
+
             with st.container(border=True):
                 panel_title("Nilai PDRB dan Pendapatan Per Kapita Kabupaten Tanah Laut")
                 df_disp = df_p[["tahun", "nilai_adhb", "nilai_adhk", "pdptn_perkapita_adhb", "pdptn_perkapita_adhk"]].rename(
                     columns={"tahun": "Tahun", "nilai_adhb": "PDRB ADHB", "nilai_adhk": "PDRB ADHK", "pdptn_perkapita_adhb": "Pendapatan ADHB", "pdptn_perkapita_adhk": "Pendapatan ADHK"}
                 )
                 render_pdrb_table(df_disp.sort_values("Tahun", ascending=False))
+
 elif kategori == "Pertanian":
     page_header("🌾", "Pertanian", breadcrumb_path)
     with section_guard("Pertanian"):
@@ -1688,4 +2081,5 @@ elif kategori == "Pertanian":
                     render_custom_table(pivot, key="ntp_pivot", page_size=20, variant="yellow")
             else:
                 st.info("Data NTP belum tersedia untuk rentang tahun ini.")
+
 _html("<div class='footer-note'>Sumber: BPS Kabupaten Tanah Laut · Data disinkronkan otomatis setiap 1 jam</div>")
