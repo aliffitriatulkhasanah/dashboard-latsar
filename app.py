@@ -1883,34 +1883,21 @@ elif sub_kategori == "Inflasi":
                 render_custom_table(df_disp.iloc[::-1], key="inflasi")
 
 elif sub_kategori == "Track Record Inflasi":
-    df_tr = get_df("Inflasi_NTP")
-    
-    if df_tr.empty:
-        page_header("📊", "Track Record Inflasi", breadcrumb_path, "Rekam Jejak Inflasi Kabupaten Tanah Laut")
-        with section_guard("Track Record Inflasi"):
+    page_header("📊", "Track Record Inflasi", breadcrumb_path, "Rekam Jejak Inflasi Kabupaten Tanah Laut, Januari 2024 - Juli 2026")
+    with section_guard("Track Record Inflasi"):
+        df_tr = get_df("Inflasi_NTP")
+        if df_tr.empty:
             st.warning("Data inflasi tidak tersedia.")
-    else:
-        # 1. Olah & Urutkan Data
-        df_tr = df_tr.copy()
-        df_tr["bulan_idx"] = df_tr["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
-        df_tr = df_tr[df_tr["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
-        labels_tr = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_tr["bulan"], df_tr["tahun"])]
-
-        # 2. Ambil Waktu Awal & Akhir secara Dinamis
-        bln_awal, thn_awal = df_tr.iloc[0]["bulan"], int(df_tr.iloc[0]["tahun"])
-        bln_akhir, thn_akhir = df_tr.iloc[-1]["bulan"], int(df_tr.iloc[-1]["tahun"])
-        rentang_waktu = f"{bln_awal} {thn_awal} - {bln_akhir} {thn_akhir}"
-
-        # 3. Tampilkan Page Header
-        page_header("📊", "Track Record Inflasi", breadcrumb_path, f"Rekam Jejak Inflasi Kabupaten Tanah Laut, {rentang_waktu}")
-
-        with section_guard("Track Record Inflasi"):
+        else:
+            df_tr = df_tr.copy()
+            df_tr["bulan_idx"] = df_tr["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
+            df_tr = df_tr[df_tr["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
+            labels_tr = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_tr["bulan"], df_tr["tahun"])]
+      
             with st.container(border=True):
-                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", {rentang_waktu})
-                
+                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", "Januari 2024 - Juli 2026")
                 opts_multi = {
-                    "backgroundColor": "transparent",
-                    "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
                     "legend": {"bottom": 0},
                     "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
                     "xAxis": {"type": "category", "data": labels_tr, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
