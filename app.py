@@ -1906,7 +1906,7 @@ elif sub_kategori == "Track Record Inflasi":
 
         with section_guard("Track Record Inflasi"):
             with st.container(border=True):
-                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", rentang_waktu)
+                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", {rentang_waktu})
                 
                 opts_multi = {
                     "backgroundColor": "transparent",
