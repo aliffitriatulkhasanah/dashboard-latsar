@@ -968,7 +968,7 @@ with st.sidebar:
             "**Rasio Gini** — ukuran ketimpangan pengeluaran; 0 = merata sempurna, 1 = timpang sempurna.\n\n"
             "**IPM** — Indeks Pembangunan Manusia: gabungan dimensi kesehatan, pendidikan, dan standar hidup layak.\n\n"
             "**UHH / HLS / RLS** — UHH: Usia Harapan Hidup. HLS: Harapan Lama Sekolah. RLS: Rata-rata Lama Sekolah.\n\n"
-            "**Pendapatan/Kapita Disesuaikan** — Pendapatan Per Kapita Disesuaikan (ribu rupiah per orang per tahun).\n\n"
+            "**Pengeluaran/Kapita** — Pengeluaran Per Kapita Disesuaikan (ribu rupiah per orang per tahun).\n\n"
             "**IPG / IDG / IKG** — Indeks Pembangunan Gender, Indeks Pemberdayaan Gender, Indeks Ketimpangan Gender.\n\n"
             "**NTP** — Nilai Tukar Petani: rasio harga jual hasil pertanian terhadap harga barang yang "
             "dibeli petani. NTP > 100 berarti petani diuntungkan.\n\n"
@@ -1381,7 +1381,7 @@ elif sub_kategori == "IPM":
             sparkline_kpi_card(c_uhh, "UHH", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0])
             sparkline_kpi_card(c_hls, "HLS", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0])
             sparkline_kpi_card(c_rls, "RLS", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0])
-            sparkline_kpi_card(c_peng, "Pengeluaran/Kapita Disesuaikan", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0])
+            sparkline_kpi_card(c_peng, "Pengeluaran/Kapita", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0])
             if not df_i_valid.empty:
                 gap = last_i["ipm"] - last_i["ipm_kalsel"] if pd.notna(last_i.get("ipm_kalsel")) else None
                 gap_txt = f" — {'melampaui' if gap > 0 else 'di bawah'} rata-rata provinsi sebesar {abs(gap):.2f} poin." if gap is not None else "."
