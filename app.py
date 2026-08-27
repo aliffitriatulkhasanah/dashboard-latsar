@@ -707,7 +707,7 @@ def render_pdrb_table(df: pd.DataFrame):
         "<tr>"
         "<th class='grp-tahun' rowspan='2'>Tahun</th>"
         "<th class='grp-nilai' colspan='2'>Nilai PDRB (Milyar Rp)</th>"
-        "<th class='grp-perkap' colspan='2'>Pendapatan per Kapita (Rb Rp)</th>"
+        "<th class='grp-perkap' colspan='2'>Pendapatan per Kapita (Ribu Rp)</th>"
         "</tr>"
         "<tr><th class='grp-nilai'>ADHB</th><th class='grp-nilai'>ADHK 2010</th>"
         "<th class='grp-perkap'>ADHB</th><th class='grp-perkap'>ADHK 2010</th></tr>"
@@ -967,6 +967,8 @@ with st.sidebar:
             "antara penduduk miskin).\n\n"
             "**Rasio Gini** — ukuran ketimpangan pengeluaran; 0 = merata sempurna, 1 = timpang sempurna.\n\n"
             "**IPM** — Indeks Pembangunan Manusia: gabungan dimensi kesehatan, pendidikan, dan standar hidup layak.\n\n"
+            "**UHH / HLS / RLS** — UHH: Usia Harapan Hidup. HLS: Harapan Lama Sekolah. RLS: Rata-rata Lama Sekolah.\n\n"
+            "**Pendapatan/Kapita Disesuaikan** — Pendapatan Per Kapita Disesuaikan (ribu rupiah per orang per tahun).\n\n"
             "**IPG / IDG / IKG** — Indeks Pembangunan Gender, Indeks Pemberdayaan Gender, Indeks Ketimpangan Gender.\n\n"
             "**NTP** — Nilai Tukar Petani: rasio harga jual hasil pertanian terhadap harga barang yang "
             "dibeli petani. NTP > 100 berarti petani diuntungkan.\n\n"
@@ -1116,7 +1118,7 @@ elif sub_kategori == "Kependudukan":
                 c_chart, c_insight = st.columns([1.7, 1])
                 with c_chart:
                     with st.container(border=True):
-                        panel_title("Jumlah dan Pertumbuhan Penduduk", "Klik titik tahun untuk lihat kepadatan & rasio JK di tahun itu")
+                        panel_title("Jumlah dan Pertumbuhan Penduduk", "Klik titik tahun untuk melihat kepadatan & rasio JK tahun tersebut")
                         kep_opts = {
                             "backgroundColor": "transparent",
                             "tooltip": {"trigger": "axis", "formatter": FMT_ID},
@@ -1223,7 +1225,7 @@ elif sub_kategori == "Tenaga Kerja":
             c_chart, c_insight = st.columns([1.7, 1])
             with c_chart:
                 with st.container(border=True):
-                    panel_title("Perkembangan TPT dan TPAK", "Klik titik tahun untuk lihat rincian di bawah")
+                    panel_title("Perkembangan TPT dan TPAK", "Klik titik tahun untuk melihat rincian di bawahnya")
                     tk_opts = {
                         "backgroundColor": "transparent",
                         "tooltip": {"trigger": "axis", "formatter": FMT_ID},
@@ -1252,7 +1254,7 @@ elif sub_kategori == "Tenaga Kerja":
             donut_labels = ["Angkatan Kerja", "Bukan Angkatan Kerja"]
             with c_donut:
                 with st.container(border=True):
-                    panel_title(f"Proporsi {int(t_aktif_tk)}", "Klik salah satu bagian untuk rincian")
+                    panel_title(f"Proporsi {int(t_aktif_tk)}", "Klik salah satu bagian chart untuk melihat rincian")
                     tpak_val = row_tk["tpak"] if pd.notna(row_tk["tpak"]) else 0
                     donut_opts = {
                         "backgroundColor": "transparent",
@@ -1277,7 +1279,7 @@ elif sub_kategori == "Tenaga Kerja":
             with c_stack:
                 with st.container(border=True):
                     if kategori_aktif_tk == "Angkatan Kerja":
-                        panel_title("Rincian Angkatan Kerja", "Bekerja vs Pengangguran, per tahun")
+                        panel_title("Rincian Angkatan Kerja", "Bekerja dan Pengangguran, per tahun")
                         stack_series = [
                             {"name": "Bekerja", "type": "bar", "stack": "s", "data": df_tk["bekerja"].round(2).tolist(), "itemStyle": {"color": COLORS[0]}},
                             {"name": "Pengangguran", "type": "bar", "stack": "s", "data": df_tk["pengangguran"].round(2).tolist(), "itemStyle": {"color": COLORS[3]}},
@@ -1324,7 +1326,7 @@ elif sub_kategori == "Kemiskinan":
             c1, c2 = st.columns([1.6, 1])
             with c1:
                 with st.container(border=True):
-                    panel_title("Jumlah Penduduk Miskin vs Garis Kemiskinan")
+                    panel_title("Jumlah Penduduk Miskin dan Garis Kemiskinan")
                     dual_opts = {
                         "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
                         "legend": {"bottom": 0},
@@ -1379,7 +1381,7 @@ elif sub_kategori == "IPM":
             sparkline_kpi_card(c_uhh, "UHH", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0])
             sparkline_kpi_card(c_hls, "HLS", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0])
             sparkline_kpi_card(c_rls, "RLS", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0])
-            sparkline_kpi_card(c_peng, "Pengeluaran/Kapita", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0])
+            sparkline_kpi_card(c_peng, "Pengeluaran/Kapita Disesuaikan", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0])
             if not df_i_valid.empty:
                 gap = last_i["ipm"] - last_i["ipm_kalsel"] if pd.notna(last_i.get("ipm_kalsel")) else None
                 gap_txt = f" — {'melampaui' if gap > 0 else 'di bawah'} rata-rata provinsi sebesar {abs(gap):.2f} poin." if gap is not None else "."
@@ -1413,7 +1415,7 @@ elif sub_kategori == "IPM":
                         "**IKG** yang semakin menjauhi 1 menunjukkan ketimpangan gender semakin berkurang."
                     )
             df_disp = df_i[["tahun", "ipm", "ipm_kalsel", "uhh", "hls", "rls", "pengeluaran"]].rename(
-                columns={"tahun": "Tahun", "ipm": "IPM Tala", "ipm_kalsel": "IPM Kalsel", "uhh": "UHH", "hls": "HLS", "rls": "RLS", "pengeluaran": "Pengeluaran/Kapita (Rp)"}
+                columns={"tahun": "Tahun", "ipm": "IPM Tala", "ipm_kalsel": "IPM Kalsel", "uhh": "UHH", "hls": "HLS", "rls": "RLS", "pengeluaran": "Pengeluaran/Kapita Disesuaikan (Ribu Rupiah)"}
             )
             render_custom_table(df_disp.sort_values("Tahun", ascending=False), key="ipm")
 elif sub_kategori == "Inflasi":
@@ -1508,7 +1510,7 @@ elif sub_kategori == "Inflasi":
                             if bubble_pendorong:
                                 opts = {
                                     "backgroundColor": "transparent", "tooltip": {"formatter": tooltip_js},
-                                    "xAxis": {"type": "value", "name": "IHK", "nameLocation": "middle", "nameGap": 28},
+                                    "xAxis": {"type": "value", "name": "IHK Bulan Berjalan", "nameLocation": "middle", "nameGap": 28},
                                     "yAxis": {"type": "value", "name": "Andil Bulan Berjalan (%)"},
                                     "series": [{"type": "scatter", "data": bubble_pendorong, "symbolSize": size_js, "itemStyle": {"color": COLORS[3], "opacity": 0.75}, "label": {"show": True, "formatter": "{b}", "position": "top", "fontSize": 9}}],
                                 }
@@ -1521,7 +1523,7 @@ elif sub_kategori == "Inflasi":
                             if bubble_penahan:
                                 opts = {
                                     "backgroundColor": "transparent", "tooltip": {"formatter": tooltip_js},
-                                    "xAxis": {"type": "value", "name": "IHK", "nameLocation": "middle", "nameGap": 28},
+                                    "xAxis": {"type": "value", "name": "IHK Bulan Berjalan", "nameLocation": "middle", "nameGap": 28},
                                     "yAxis": {"type": "value", "name": "Andil Bulan Berjalan (%)"},
                                     "series": [{"type": "scatter", "data": bubble_penahan, "symbolSize": size_js, "itemStyle": {"color": COLORS[0], "opacity": 0.75}, "label": {"show": True, "formatter": "{b}", "position": "top", "fontSize": 9}}],
                                 }
@@ -1574,7 +1576,7 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
         else:
             years_p = df_p["tahun"].astype(int).tolist()
             with st.container(border=True):
-                panel_title("Laju Pertumbuhan Ekonomi vs PDRB per Kapita", "Klik titik tahun untuk lihat distribusi PDRB di bawah")
+                panel_title("Laju Pertumbuhan Ekonomi vs PDRB per Kapita", "Klik titik tahun untuk melihat distribusi PDRB di bawah")
                 growth_opts = {
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
                     "legend": {"bottom": 0},
