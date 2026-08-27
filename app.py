@@ -1528,39 +1528,6 @@ elif sub_kategori == "Inflasi":
                                 st_echarts(options=opts, height="380px", key="inf_bubble_penahan", theme=e_theme)
                             else:
                                 st.info("Belum ada komoditas dengan frekuensi Top 10 >= 3x.")
-                if bubble_pendorong or bubble_penahan:
-                    # 1. Evaluasi Pendorong (jika list tidak kosong)
-                    if bubble_pendorong:
-                        p_andil = max(bubble_pendorong, key=lambda x: x["value"][1])
-                        p_freq = max(bubble_pendorong, key=lambda x: x["value"][2])
-                        teks_pendorong = (
-                            f"Tekanan kenaikan harga terbesar didorong oleh **{p_andil['name']}** "
-                            f"(andil `{p_andil['value'][1]:+.4f}%`, IHK `{p_andil['value'][0]}`). "
-                            f"Komoditas pendorong paling persisten adalah **{p_freq['name']}** "
-                            f"({p_freq['value'][2]}x masuk Top 10)."
-                        )
-                    else:
-                        teks_pendorong = "Belum ada komoditas pendorong utama yang memenuhi kriteria frekuensi (min. 3x) pada rentang bulan ini."
-                
-                    # 2. Evaluasi Penahan (jika list tidak kosong)
-                    if bubble_penahan:
-                        t_andil = min(bubble_penahan, key=lambda x: x["value"][1])
-                        t_freq = max(bubble_penahan, key=lambda x: x["value"][2])
-                        teks_penahan = (
-                            f"Kenaikan harga berhasil diredam terutama oleh **{t_andil['name']}** "
-                            f"(andil `{t_andil['value'][1]:+.4f}%`, IHK `{t_andil['value'][0]}`). "
-                            f"Komoditas penahan paling konsisten adalah **{t_freq['name']}** "
-                            f"({t_freq['value'][2]}x masuk Top 10)."
-                        )
-                    else:
-                        teks_penahan = "Belum ada komoditas penahan utama yang memenuhi kriteria frekuensi (min. 3x) pada rentang bulan ini."
-                
-                    # 3. Tampilkan UI
-                    with st.expander(f"📌 Interpretasi Otomatis Top Komoditas ({bulan_aktif} 2026)", expanded=True):
-                        st.markdown(f"""
-                        * **Pendorong Inflasi:** {teks_pendorong}
-                        * **Penahan Inflasi:** {teks_penahan}
-                        """)
                 df_harga = apply_filter(get_df("Harga"), (2026, 2026))
                 if not df_harga.empty:
                     df_harga = df_harga.copy()
