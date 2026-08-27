@@ -1883,35 +1883,48 @@ elif sub_kategori == "Inflasi":
                 render_custom_table(df_disp.iloc[::-1], key="inflasi")
 
 elif sub_kategori == "Track Record Inflasi":
-    page_header("📊", "Track Record Inflasi", breadcrumb_path, "Rekam Jejak Inflasi Kabupaten Tanah Laut, Januari 2024 - Juli 2026")
-    with section_guard("Track Record Inflasi"):
-        df_tr = get_df("Inflasi_NTP")
-        if df_tr.empty:
+    df_tr = get_df("Inflasi_NTP")
+    
+    if df_tr.empty:
+        page_header("📊", "Track Record Inflasi", breadcrumb_path, "Rekam Jejak Inflasi Kabupaten Tanah Laut")
+        with section_guard("Track Record Inflasi"):
             st.warning("Data inflasi tidak tersedia.")
-        else:
-            df_tr = df_tr.copy()
-            df_tr["bulan_idx"] = df_tr["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
-            df_tr = df_tr[df_tr["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
-            labels_tr = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_tr["bulan"], df_tr["tahun"])]
+    else:
+        # 1. Olah & Urutkan Data
+        df_tr = df_tr.copy()
+        df_tr["bulan_idx"] = df_tr["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
+        df_tr = df_tr[df_tr["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
+        labels_tr = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_tr["bulan"], df_tr["tahun"])]
 
+        # 2. Ambil Waktu Awal & Akhir secara Dinamis
+        bln_awal, thn_awal = df_tr.iloc[0]["bulan"], int(df_tr.iloc[0]["tahun"])
+        bln_akhir, thn_akhir = df_tr.iloc[-1]["bulan"], int(df_tr.iloc[-1]["tahun"])
+        rentang_waktu = f"{bln_awal} {thn_awal} - {bln_akhir} {thn_akhir}"
+
+        # 3. Tampilkan Page Header
+        page_header("📊", "Track Record Inflasi", breadcrumb_path, f"Rekam Jejak Inflasi Kabupaten Tanah Laut, {rentang_waktu}")
+
+        with section_guard("Track Record Inflasi"):
             with st.container(border=True):
-                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", "Januari 2024 - Juli 2026")
+                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", rentang_waktu)
+                
                 opts_multi = {
-                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                    "backgroundColor": "transparent",
+                    "tooltip": {"trigger": "axis", "formatter": FMT_ID},
                     "legend": {"bottom": 0},
                     "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
                     "xAxis": {"type": "category", "data": labels_tr, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
                     "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
                     "series": [
-                        {"name": "MtM", "type": "line", "data": df_tr["inflasi_mtm"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[0]}, "lineStyle": {"width": 2}, "symbolSize": 4},
-                        {"name": "YtD", "type": "line", "data": df_tr["inflasi_ytd"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[1]}, "lineStyle": {"width": 2}, "symbolSize": 4},
-                        {"name": "YoY", "type": "line", "data": df_tr["inflasi_yoy"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[3]}, "lineStyle": {"width": 2.5}, "symbolSize": 4},
+                        {"name": "m-to-m", "type": "line", "data": df_tr["inflasi_mtm"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[0]}, "lineStyle": {"width": 2}, "symbolSize": 4},
+                        {"name": "y-to-d", "type": "line", "data": df_tr["inflasi_ytd"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[1]}, "lineStyle": {"width": 2}, "symbolSize": 4},
+                        {"name": "y-on-y", "type": "line", "data": df_tr["inflasi_yoy"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[3]}, "lineStyle": {"width": 2.5}, "symbolSize": 4},
                     ],
                 }
                 st_echarts(options=opts_multi, height="400px", key="tr_inflasi_line", theme=e_theme)
 
             with st.container(border=True):
-                panel_title("Indeks Harga Konsumen (IHK)", "Januari 2024 - Juli 2026")
+                panel_title("Indeks Harga Konsumen (IHK)", {rentang_waktu})
                 opts_ihk = {
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
                     "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
@@ -1922,10 +1935,10 @@ elif sub_kategori == "Track Record Inflasi":
                 st_echarts(options=opts_ihk, height="340px", key="tr_ihk_line", theme=e_theme)
 
             with st.container(border=True):
-                panel_title("Inflasi Year-on-Year Berdasarkan Kelompok Pengeluaran", "Pilih maksimal 3 kelompok untuk dibandingkan (sumber: sheet Inflasi_COICOP22)")
+                panel_title("Inflasi Year-on-Year Berdasarkan Kelompok Pengeluaran (2022 = 100)", "Pilih maksimal 3 kelompok untuk dibandingkan")
                 df_coicop = get_coicop()
                 if df_coicop.empty:
-                    st.info("Data inflasi per kelompok pengeluaran (sheet Inflasi_COICOP22) belum tersedia.")
+                    st.info("Data inflasi per kelompok pengeluaran belum tersedia.")
                 else:
                     df_coicop = df_coicop.copy()
                     df_coicop["bulan_idx"] = df_coicop["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
@@ -1934,7 +1947,6 @@ elif sub_kategori == "Track Record Inflasi":
                     pilihan = st.multiselect(
                         "Kelompok Pengeluaran", kategori_cols, default=kategori_cols[:1],
                         max_selections=3, key="coicop_pilihan",
-                        help="Maksimal 3 kelompok bisa dipilih sekaligus supaya grafik tetap terbaca.",
                     )
                     if not pilihan:
                         st.info("Pilih minimal 1 kelompok pengeluaran untuk menampilkan grafik.")
