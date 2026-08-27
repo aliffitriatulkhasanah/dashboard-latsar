@@ -1528,6 +1528,22 @@ elif sub_kategori == "Inflasi":
                                 st_echarts(options=opts, height="380px", key="inf_bubble_penahan", theme=e_theme)
                             else:
                                 st.info("Belum ada komoditas dengan frekuensi Top 10 >= 3x.")
+                if bubble_pendorong or bubble_penahan:
+                    # Ambil item ekstrem pendorong
+                    p_andil = max(bubble_pendorong, key=lambda x: x["value"][1]) if bubble_pendorong else None
+                    p_freq = max(bubble_pendorong, key=lambda x: x["value"][2]) if bubble_pendorong else None
+                    
+                    # Ambil item ekstrem penahan
+                    t_andil = min(bubble_penahan, key=lambda x: x["value"][1]) if bubble_penahan else None
+                    t_freq = max(bubble_penahan, key=lambda x: x["value"][2]) if bubble_penahan else None
+                
+                    # Tampilkan box interpretasi otomatis
+                    with st.expander("📌 Interpretasi & Ringkasan Otomatis", expanded=True):
+                        st.markdown(f"""
+                        Pada bulan **{bulan_aktif} 2026**:
+                        1. **Pendorong Inflasi:** Tekanan kenaikan harga terbesar didorong oleh **{p_andil['name']}** (andil `{p_andil['value'][1]:+.4f}%`, IHK `{p_andil['value'][0]}`). Komoditas pendorong yang paling persisten/sering muncul adalah **{p_freq['name']}** ({p_freq['value'][2]} kali masuk Top 10).
+                        2. **Penahan Inflasi:** Kenaikan harga berhasil diredam terutama oleh deflasi pada **{t_andil['name']}** (andil `{t_andil['value'][1]:+.4f}%`, IHK `{t_andil['value'][0]}`). Komoditas penahan yang paling konsisten menjaga stabilitas harga adalah **{t_freq['name']}** ({t_freq['value'][2]} kali masuk Top 10).
+                        """)
                 df_harga = apply_filter(get_df("Harga"), (2026, 2026))
                 if not df_harga.empty:
                     df_harga = df_harga.copy()
