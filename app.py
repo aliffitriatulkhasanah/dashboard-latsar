@@ -1883,19 +1883,33 @@ elif sub_kategori == "Inflasi":
                 render_custom_table(df_disp.iloc[::-1], key="inflasi")
 
 elif sub_kategori == "Track Record Inflasi":
-    page_header("📊", "Track Record Inflasi", breadcrumb_path, "Rekam Jejak Inflasi Kabupaten Tanah Laut, Januari 2024 - Juli 2026")
     with section_guard("Track Record Inflasi"):
         df_tr = get_df("Inflasi_NTP")
         if df_tr.empty:
+            # Karena page_header butuh judul, kita pasang default jika data kosong
+            page_header("📊", "Track Record Inflasi", breadcrumb_path, "Rekam Jejak Inflasi Kabupaten Tanah Laut")
             st.warning("Data inflasi tidak tersedia.")
         else:
             df_tr = df_tr.copy()
             df_tr["bulan_idx"] = df_tr["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
             df_tr = df_tr[df_tr["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
+            
+            # --- MEMBUAT RENTANG WAKTU DINAMIS ---
+            bulan_awal = df_tr["bulan"].iloc[0]
+            tahun_awal = int(df_tr["tahun"].iloc[0])
+            bulan_akhir = df_tr["bulan"].iloc[-1]
+            tahun_akhir = int(df_tr["tahun"].iloc[-1])
+            rentang_waktu = f"{bulan_awal} {tahun_awal} - {bulan_akhir} {tahun_akhir}"
+            # ------------------------------------
+
+            # Sekarang masukkan variabel rentang_waktu ke page_header
+            page_header("📊", "Track Record Inflasi", breadcrumb_path, f"Rekam Jejak Inflasi Kabupaten Tanah Laut, {rentang_waktu}")
+
             labels_tr = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_tr["bulan"], df_tr["tahun"])]
       
             with st.container(border=True):
-                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", "Januari 2024 - Juli 2026")
+                # Menggunakan variabel rentang_waktu di panel_title
+                panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", rentang_waktu)
                 opts_multi = {
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
                     "legend": {"bottom": 0},
@@ -1911,7 +1925,8 @@ elif sub_kategori == "Track Record Inflasi":
                 st_echarts(options=opts_multi, height="400px", key="tr_inflasi_line", theme=e_theme)
 
             with st.container(border=True):
-                panel_title("Indeks Harga Konsumen (IHK)", "Januari 2024 - Juli 2026")
+                # Menggunakan variabel rentang_waktu di panel_title
+                panel_title("Indeks Harga Konsumen (IHK)", rentang_waktu)
                 opts_ihk = {
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
                     "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
