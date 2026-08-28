@@ -362,15 +362,17 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 [data-testid="stMultiSelect"] div[data-baseweb="select"] {{ height: auto !important; }}
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div {{
     flex-wrap: wrap !important; height: auto !important; min-height: 44px !important;
-    overflow: visible !important; padding: 6px 8px !important; align-items: center !important;
+    overflow: visible !important; padding: 4px !important; align-items: center !important;
 }}
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] {{
-    height: auto !important; max-width: 100% !important; margin: 3px 4px 3px 0 !important;
-    overflow: visible !important; padding: 4px 6px !important;
+    height: auto !important; min-height: 32px !important; max-width: 100% !important; 
+    margin: 3px !important; padding: 4px 8px !important;
+    display: inline-flex !important; align-items: center !important;
 }}
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] span {{
     white-space: normal !important; overflow: visible !important; text-overflow: unset !important;
-    word-break: break-word !important; line-height: 1.3 !important;
+    word-break: break-word !important; line-height: 1.4 !important;
+    background-color: transparent !important;
 }}
 /* ---- Notifikasi batas pilihan custom (pengganti pesan bawaan browser/
    BaseWeb "You can only select up to N options" yang berbahasa Inggris
@@ -2052,20 +2054,12 @@ elif sub_kategori == "Track Record Inflasi":
                     # itu dilarang Streamlit di run yang sama) - lihat pola yang sama di
                     # "kepen_wilayah_pending" pada bagian sidebar.
                     ms_key = "coicop_pilihan"
-                    limit_hit = False
-                    if ms_key in st.session_state and len(st.session_state[ms_key]) > 3:
-                        st.session_state[ms_key] = st.session_state[ms_key][:3]
-                        limit_hit = True
-
+                  
                     pilihan = st.multiselect(
                         "Kelompok Pengeluaran", kategori_cols, default=kategori_cols[:1], key=ms_key,
                         format_func=lambda k: COICOP_SHORT_LABEL.get(k, k),
+                        max_selections=3
                     )
-                    if limit_hit:
-                        _html(
-                            "<div class='limit-notice'>⚠️ Maksimal 3 kelompok pengeluaran bisa dipilih sekaligus "
-                            "supaya grafik tetap mudah dibaca. Hapus salah satu pilihan dulu sebelum menambahkan yang lain.</div>"
-                        )
 
                     if not pilihan:
                         st.info("Pilih minimal 1 kelompok pengeluaran untuk menampilkan grafik.")
