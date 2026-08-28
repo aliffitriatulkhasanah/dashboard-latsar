@@ -1814,7 +1814,7 @@ elif sub_kategori == "Inflasi":
                         badge_html = ""
                         if file_id:
                             download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-                            badge_html = f"<a class='pdf-badge' href='{download_url}' target='_blank' rel='noopener noreferrer' style='position: relative; z-index: 10; display: inline-block;'>📥 Unduh PDF</a>"
+                            badge_html = f"<a class='pdf-badge' href='{download_url}' download='Rilis_Inflasi_Tanah_Laut.pdf' target='_blank' rel='noopener noreferrer' style='position: relative; z-index: 10; display: inline-block;'>📥 Unduh PDF</a>"
                         _html(
                             f"<div class='pdf-card'>"
                             f"<span class='pdf-card-icon'>📄</span>"
