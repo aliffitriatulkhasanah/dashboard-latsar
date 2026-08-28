@@ -1814,14 +1814,14 @@ elif sub_kategori == "Inflasi":
                         badge_html = ""
                         if file_id:
                             download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-                            badge_html = f"<a class='pdf-badge' href='{download_url}' target='_blank' rel='noopener noreferrer'>📥 Unduh PDF</a>"
+                            badge_html = f"<a class='pdf-badge' href='{download_url}' target='_blank' rel='noopener noreferrer' style='position: relative; z-index: 10; display: inline-block;'>📥 Unduh PDF</a>"
                         _html(
                             f"<div class='pdf-card'>"
                             f"<span class='pdf-card-icon'>📄</span>"
                             f"<div class='pdf-card-text'>"
-                            f"<a class='pdf-card-title' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>Buka Dokumen Rilis Inflasi</a>"
-                            f"<span class='pdf-card-sub'>Klik judul untuk melihat, atau gunakan tombol di bawah untuk mengunduh.</span>"
-                            f"{badge_html}"
+                            f"<a class='pdf-card-title' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer' style='display: inline-block; position: relative; z-index: 5;'>Buka Dokumen Rilis Inflasi</a>"
+                            f"<span class='pdf-card-sub' style='display: block;'>Klik judul untuk melihat, atau gunakan tombol di bawah untuk mengunduh.</span>"
+                            f"<div class='pdf-badge-container' style='position: relative; z-index: 10; margin-top: 8px;'>{badge_html}</div>"
                             f"</div>"
                             f"</div>"
                         )
