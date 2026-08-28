@@ -1813,13 +1813,12 @@ elif sub_kategori == "Inflasi":
                         file_id = extract_drive_file_id(rilis_url)
                         badge_html = ""
                         if file_id:
-                            download_url = f"https://docs.google.com/uc?export=download&id={file_id}"
+                            download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
                             badge_html = (
                                 f"<a class='pdf-badge' "
                                 f"href='{download_url}' "
-                                f"target='_blank' "
-                                f"rel='noopener noreferrer' "
-                                f"onclick=\"window.location.href='{download_url}'; return false;\">"
+                                f"target='_self' "
+                                f"onclick=\"event.preventDefault(); var ifr = document.createElement('iframe'); ifr.style.display = 'none'; ifr.src = '{download_url}'; document.body.appendChild(ifr); return false;\">"
                                 f"📥 Unduh PDF"
                                 f"</a>"
                             )
