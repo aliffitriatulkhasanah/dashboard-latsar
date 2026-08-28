@@ -2048,8 +2048,7 @@ elif sub_kategori == "Track Record Inflasi":
 
                     pilihan = st.multiselect(
                         "Kelompok Pengeluaran", kategori_cols, default=kategori_cols[:1], key=ms_key,
-                        format_func=lambda k: COICOP_SHORT_LABEL.get(k, k),
-                        max_selections=3
+                        format_func=lambda k: COICOP_SHORT_LABEL.get(k, k)
                     )
 
                     if not pilihan:
