@@ -1813,8 +1813,16 @@ elif sub_kategori == "Inflasi":
                         file_id = extract_drive_file_id(rilis_url)
                         badge_html = ""
                         if file_id:
-                            download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-                            badge_html = f"<a class='pdf-badge force-download-mobile' href='{download_url}' data-filename='Rilis_Inflasi_Tanah_Laut.pdf' target='_blank' rel='noopener noreferrer'>📥 Unduh PDF</a>"
+                            download_url = f"https://docs.google.com/uc?export=download&id={file_id}"
+                            badge_html = (
+                                f"<a class='pdf-badge' "
+                                f"href='{download_url}' "
+                                f"target='_blank' "
+                                f"rel='noopener noreferrer' "
+                                f"onclick=\"window.location.href='{download_url}'; return false;\">"
+                                f"📥 Unduh PDF"
+                                f"</a>"
+                            )
                         _html(
                             f"<div class='pdf-card'>"
                                 f"<span class='pdf-card-icon'>📄</span>"
@@ -1824,42 +1832,6 @@ elif sub_kategori == "Inflasi":
                                     f"{badge_html}"
                                 f"</div>"
                             f"</div>"
-                            
-                            # --- SCRIPT JAVASCRIPT TAMBAHAN (TIDAK MERUSAK DESAIN) ---
-                            f"""
-                            <script>
-                            document.querySelectorAll('.force-download-mobile').forEach(button => {{
-                                button.addEventListener('click', function(e) {{
-                                    // Cek apakah user membuka dari perangkat mobile (HP)
-                                    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {{
-                                        e.preventDefault(); // Menghentikan aksi bawaan browser HP yang suka membuka pratinjau
-                                        
-                                        const url = this.getAttribute('href');
-                                        const filename = this.getAttribute('data-filename') || 'download.pdf';
-                                        
-                                        // Ambil file PDF menggunakan fetch di latar belakang HP
-                                        fetch(url)
-                                            .then(response => response.blob())
-                                            .then(blob => {{
-                                                // Ubah response menjadi objek unduhan lokal murni tingkat sistem
-                                                const blobUrl = window.URL.createObjectURL(blob);
-                                                const a = document.createElement('a');
-                                                a.href = blobUrl;
-                                                a.download = filename;
-                                                document.body.appendChild(a);
-                                                a.click(); // Memicu download murni tingkat sistem HP
-                                                document.body.removeChild(a);
-                                                window.URL.revokeObjectURL(blobUrl);
-                                            }})
-                                            .catch(err => {{
-                                                // Jika terjadi error/CORS, buka tab baru sebagai cadangan biasa
-                                                window.open(url, '_blank');
-                                            }});
-                                    }}
-                                }});
-                            }});
-                            </script>
-                            """
                         )
                     else:
                         st.info(
