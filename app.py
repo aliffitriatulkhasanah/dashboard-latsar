@@ -23,16 +23,31 @@ Patch (Agustus 2026, ronde 2):
   apple dengan andil m-to-m bulan berjalan di sumbu-Y - sebelumnya sempat pakai
   IHK Tanah Laut (bukan per komoditas) lalu dirata-rata, ternyata datanya ADA
   di sheet tersendiri jadi tidak perlu didekati/dirata-ratakan lagi.
-- Ditambah kotak dokumen PDF Bahan Rilis Inflasi di halaman Inflasi.
+- Ditambah kotak dokumen Bahan Rilis Inflasi di halaman Inflasi - sumbernya
+  link Google Drive di sheet Inflasi_NTP kolom "bahan_rilis" (bahan rilis
+  bulan TERBARU yang sudah terisi), bukan berkas lokal.
 - Ditambah halaman baru "Track Record Inflasi" di sub-kategori Ekonomi.
 - Slider "Rentang Waktu" dihilangkan dari sidebar saat kategori = Dashboard
   Utama (halaman itu memang selalu menampilkan data TERBARU, tidak difilter).
+
+Patch (Agustus 2026, ronde 3):
+- Interpretasi otomatis bubble chart komoditas diseragamkan sesuai template
+  yang diminta: pendorong/penahan bulan berjalan (andil tertinggi/terendah
+  bulan itu saja) + komoditas paling konsisten sepanjang tahun berjalan
+  (frekuensi top-10 terbanyak).
+- Filter multiselect "Kelompok Pengeluaran" (Track Record Inflasi) dirapikan:
+  batas maksimal 3 pilihan ditegakkan manual (bukan lewat max_selections
+  bawaan) supaya pesannya bisa di-custom dan tag pilihan tidak lagi
+  terpotong/di-scroll horizontal - dibuat wrap ke baris baru.
+- Dokumen Bahan Rilis Inflasi dipindah dari berkas lokal ke link Google
+  Drive per baris bulan di sheet Inflasi_NTP (kolom "bahan_rilis").
 """
 import streamlit as st
 import pandas as pd
 import numpy as np
 import json
 import os
+import re
 import html
 import base64
 import datetime
@@ -66,13 +81,6 @@ COLORS = ["#4F46E5", "#F59E0B", "#10B981", "#EC4899", "#06B6D4", "#D97706"]
 CARD_ACCENTS = ["#4F46E5", "#F59E0B", "#EC4899", "#06B6D4", "#10B981"]
 GEOJSON_PATH = "tanah_laut.geojson"
 LOGO_PATH = "bps.png"
-# Berkas PDF Bahan Rilis Inflasi - taruh sejajar dengan app.py (pola sama
-# seperti LOGO_PATH) supaya bisa disematkan sebagai data URI (bisa dibuka di
-# tab baru/pembuka PDF TANPA perlu di-hosting terpisah). Bisa juga dioverride
-# lewat st.secrets["PDF_RILIS_URL"] kalau kamu lebih suka nge-host di tempat
-# lain (mis. Google Drive/Storage publik) - kalau itu diisi, dipakai duluan.
-PDF_RILIS_PATH = "rilis_inflasi.pdf"
-PDF_RILIS_URL = st.secrets.get("PDF_RILIS_URL", "")
 
 REQUIRED_COLUMNS = {
     "Kependudukan": ["tahun", "kecamatan", "jumlah_penduduk", "kepadatan", "pertumbuhan", "lk", "pr", "rasio_jk"],
@@ -318,7 +326,22 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 .stRadio label p, .stRadio div[role="radiogroup"] label {{ color: {text} !important; }}
 [data-testid="stWidgetLabel"] p {{ color: {text} !important; }}
 [data-testid="stMultiSelect"] [role="group"] {{ background-color: {surface} !important; border: 1px solid {border} !important; }}
-[data-testid="stMultiSelect"] span[data-baseweb="tag"] {{ background-color: {PRIMARY} !important; }}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] {{ background-color: {PRIMARY} !important; max-width: 100% !important; }}
+/* ---- Multiselect (mis. pilihan kelompok pengeluaran di "Track Record
+   Inflasi"): BaseWeb secara default menaruh semua tag terpilih dalam SATU
+   baris yang di-scroll horizontal kalau tidak muat - kelihatan terpotong
+   dan kurang enak dilihat, apalagi di layar sempit. Dipaksa wrap ke baris
+   baru dan tinggi kotak menyesuaikan otomatis (bukan fixed height). ---- */
+[data-testid="stMultiSelect"] div[data-baseweb="select"] > div {{
+    flex-wrap: wrap !important; height: auto !important; min-height: 44px !important;
+    overflow: visible !important; padding: 4px 6px !important;
+}}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] {{ margin: 3px 4px 3px 0 !important; overflow: visible !important; }}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] span {{ white-space: normal !important; overflow: visible !important; text-overflow: unset !important; }}
+/* ---- Notifikasi batas pilihan custom (pengganti pesan bawaan browser/
+   BaseWeb "You can only select up to N options" yang berbahasa Inggris
+   dan tidak stylable) - dipakai di halaman Track Record Inflasi. ---- */
+.limit-notice {{ background-color: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); color: {text}; padding: 9px 14px; border-radius: 8px; font-size: 0.82rem; margin: 6px 0 4px 0; }}
 
 /* ---- Expander (mis. "Kamus Istilah") - belum pernah di-cover sebelumnya,
    makanya headernya masih pakai warna gelap default Streamlit walau app
@@ -538,7 +561,10 @@ def fetch_data(sheet_name: str):
         df["tahun"] = pd.to_numeric(df["tahun"], errors="coerce")
         df = df.dropna(subset=["tahun"])
         df["tahun"] = df["tahun"].astype(int)
-    text_cols = {"kecamatan", "sektor", "komoditas", "bulan", "tahun", "kabupaten"}
+    # "bahan_rilis" (URL Google Drive di sheet Inflasi_NTP) HARUS ikut masuk
+    # text_cols - kalau tidak, clean_numeric() akan mengubahnya jadi NaN
+    # karena isinya bukan angka, dan link dokumen rilis jadi hilang.
+    text_cols = {"kecamatan", "sektor", "komoditas", "bulan", "tahun", "kabupaten", "bahan_rilis"}
     for col in df.columns:
         if col not in text_cols:
             df[col] = df[col].apply(clean_numeric)
@@ -709,16 +735,16 @@ def load_logo_base64():
     return None
 
 
-@st.cache_resource(show_spinner=False)
-def load_pdf_bytes():
-    """Baca rilis_inflasi.pdf (harus sejajar dengan app.py) sebagai bytes -
-    dipakai untuk tombol unduh (st.download_button) DAN untuk disematkan
-    sebagai data URI supaya bisa dibuka langsung di tab baru/pembuka PDF
-    tanpa perlu di-hosting terpisah. None kalau berkasnya belum ada."""
-    if os.path.exists(PDF_RILIS_PATH):
-        with open(PDF_RILIS_PATH, "rb") as f:
-            return f.read()
-    return None
+def extract_drive_file_id(url: str):
+    """Ambil FILE_ID dari berbagai bentuk URL berbagi Google Drive, mis.
+    'https://drive.google.com/file/d/FILE_ID/view?usp=drive_link' atau
+    'https://drive.google.com/open?id=FILE_ID'. Dipakai untuk menyusun link
+    unduh langsung (uc?export=download). None kalau polanya tidak dikenali -
+    tombol unduh cadangan cukup disembunyikan, bukan bikin app error."""
+    if not url:
+        return None
+    m = re.search(r"/d/([a-zA-Z0-9_-]+)", url) or re.search(r"[?&]id=([a-zA-Z0-9_-]+)", url)
+    return m.group(1) if m else None
 
 
 def apply_filter(df: pd.DataFrame, year_range):
@@ -1713,30 +1739,50 @@ elif sub_kategori == "Inflasi":
                 )
 
                 # ---- Kotak dokumen PDF Bahan Rilis Inflasi ----
+                # Sumber dokumen BUKAN berkas lokal - link Google Drive-nya ada di
+                # sheet Inflasi_NTP, kolom "bahan_rilis" (diisi manual tiap bulan
+                # rilis tersedia; boleh kosong untuk bulan yang belum ada rilisnya).
+                # Yang ditampilkan selalu bahan rilis dari bulan TERBARU yang sudah
+                # terisi - bukan bulan terbaru di data inflasi secara umum, karena
+                # rilisnya bisa saja belum diunggah untuk bulan paling baru.
+                if "bahan_rilis" in df_inf_all.columns:
+                    df_rilis_src = df_inf_all[df_inf_all["bahan_rilis"].notna() & (df_inf_all["bahan_rilis"].astype(str).str.strip() != "")].copy()
+                else:
+                    df_rilis_src = pd.DataFrame()
+                if not df_rilis_src.empty:
+                    df_rilis_src["bulan_idx"] = df_rilis_src["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
+                    df_rilis_src = df_rilis_src.sort_values(["tahun", "bulan_idx"])
+                    row_rilis = df_rilis_src.iloc[-1]
+                    rilis_url = str(row_rilis["bahan_rilis"]).strip()
+                    rilis_label_bulan = f"{row_rilis['bulan']} {int(row_rilis['tahun'])}"
+                else:
+                    rilis_url, rilis_label_bulan = None, None
+
                 with st.container(border=True):
-                    panel_title("📄 Bahan Rilis Berita Resmi Statistik (BRS) Inflasi", "Dokumen resmi rilis inflasi bulanan Kabupaten Tanah Laut")
-                    pdf_bytes = load_pdf_bytes()
-                    pdf_href = PDF_RILIS_URL.strip() if PDF_RILIS_URL.strip() else None
-                    if not pdf_href and pdf_bytes:
-                        pdf_href = f"data:application/pdf;base64,{base64.b64encode(pdf_bytes).decode()}"
-                    if pdf_href:
+                    sub_rilis = f"Dokumen resmi rilis inflasi bulanan Kabupaten Tanah Laut terbaru ({rilis_label_bulan})" if rilis_label_bulan else "Dokumen resmi rilis inflasi bulanan Kabupaten Tanah Laut"
+                    panel_title("📄 Bahan Rilis Berita Resmi Statistik (BRS) Inflasi", sub_rilis)
+                    if rilis_url:
                         _html(
-                            f"<a class='pdf-card' href='{pdf_href}' target='_blank' rel='noopener noreferrer'>",
+                            f"<a class='pdf-card' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>",
                             "<div class='pdf-card-icon'>📄</div>",
                             "<div><p class='pdf-card-title'>Buka Dokumen Rilis Inflasi</p>"
                             "<p class='pdf-card-sub'>Klik untuk membuka PDF di tab baru (desktop) / pembuka PDF (HP) — tanpa perlu diunduh</p></div>",
                             "</a>",
                         )
-                        if pdf_bytes:
-                            st.download_button(
-                                "📥 Unduh PDF Rilis Inflasi (cadangan)", data=pdf_bytes,
-                                file_name="Rilis_Inflasi_Tanah_Laut.pdf", mime="application/pdf",
-                                use_container_width=True, key="dl_pdf_rilis",
+                        file_id = extract_drive_file_id(rilis_url)
+                        if file_id:
+                            download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+                            _html(
+                                f"<a class='pdf-card' style='border-left-color:{ACCENT};' href='{download_url}' target='_blank' rel='noopener noreferrer'>",
+                                "<div class='pdf-card-icon'>📥</div>",
+                                "<div><p class='pdf-card-title'>Unduh PDF Rilis Inflasi (cadangan)</p>"
+                                "<p class='pdf-card-sub'>Mengunduh berkas langsung dari Google Drive</p></div>",
+                                "</a>",
                             )
                     else:
                         st.info(
-                            "📄 Dokumen rilis inflasi belum tersedia. Letakkan berkas `rilis_inflasi.pdf` sejajar "
-                            "dengan `app.py` (atau isi `PDF_RILIS_URL` di secrets) untuk mengaktifkan fitur ini."
+                            "📄 Dokumen rilis inflasi belum tersedia. Isi link Google Drive PDF-nya di sheet "
+                            "'Inflasi_NTP' kolom 'bahan_rilis' pada baris bulan yang sesuai untuk mengaktifkan fitur ini."
                         )
 
                 # Mekanisme: untuk tiap bulan (Jan s.d. bulan berjalan), ranking komoditas
@@ -1818,29 +1864,30 @@ elif sub_kategori == "Inflasi":
                             else:
                                 st.info("Belum ada komoditas dengan frekuensi Top 10 >= 3x.")
 
-                    # Interpretasi otomatis - dibuat AMAN terhadap kondisi filter yang
-                    # membuat salah satu (atau bahkan kedua) bubble chart kosong: setiap
-                    # bagian kalimat cuma ditambahkan kalau list bubble-nya memang berisi,
-                    # jadi tidak ada indexing ke list kosong yang bisa memicu error.
-                    if bubble_pendorong or bubble_penahan:
-                        kalimat = []
-                        if bubble_pendorong:
-                            top_p = sorted(bubble_pendorong, key=lambda d: d["value"][1], reverse=True)[0]
-                            kalimat.append(
-                                f"komoditas {top_p['name'].title()} menjadi pendorong utama dengan andil "
-                                f"{top_p['value'][1]:g}% dan IHK {fmt_id(top_p['value'][0], 2)} (masuk Top 10 "
-                                f"sebanyak {top_p['value'][2]}x sepanjang tahun berjalan)"
-                            )
-                        if bubble_penahan:
-                            top_t = sorted(bubble_penahan, key=lambda d: d["value"][1])[0]
-                            kalimat.append(
-                                f"sementara {top_t['name'].title()} menjadi penahan utama dengan andil "
-                                f"{top_t['value'][1]:g}% dan IHK {fmt_id(top_t['value'][0], 2)} (masuk Top 10 "
-                                f"sebanyak {top_t['value'][2]}x)"
-                            )
+                    # Interpretasi otomatis mengikuti template yang diminta:
+                    # - "kenaikan harga terbesar" & "penahan inflasi utama" = komoditas
+                    #   dengan andil TERTINGGI/TERENDAH pada BULAN BERJALAN SAJA (dari
+                    #   seluruh komoditas bulan itu, tidak dibatasi ke yang tampil di
+                    #   bubble chart / freq >= 3).
+                    # - "konsisten mendorong/menahan" = komoditas dengan FREKUENSI top-10
+                    #   terbanyak sepanjang tahun berjalan (dari pendorong_freq/penahan_freq,
+                    #   juga tidak dibatasi ke freq >= 3 supaya benar-benar "yang paling sering").
+                    # Setiap bagian dicek non-kosong dulu sebelum dipakai, supaya kondisi
+                    # filter apa pun (termasuk bulan pertama tahun berjalan) tidak memicu error.
+                    col_now = df_kom[["komoditas", bulan_aktif]].dropna()
+                    if not col_now.empty and pendorong_freq and penahan_freq:
+                        top_now = col_now.loc[col_now[bulan_aktif].idxmax()]
+                        bottom_now = col_now.loc[col_now[bulan_aktif].idxmin()]
+                        freq_p_name, freq_p_val = max(pendorong_freq.items(), key=lambda kv: kv[1])
+                        freq_t_name, freq_t_val = max(penahan_freq.items(), key=lambda kv: kv[1])
                         insight_box(
                             "Interpretasi Komoditas Pendorong & Penahan Inflasi",
-                            f"Pada {bulan_aktif} 2026, " + "; ".join(kalimat) + ".",
+                            f"Pada {bulan_aktif}, kenaikan harga terbesar didorong oleh {str(top_now['komoditas']).title()} "
+                            f"dengan andil {top_now[bulan_aktif]:g}%. Di sisi lain, komoditas penahan inflasi utama adalah "
+                            f"{str(bottom_now['komoditas']).title()} dengan andil {bottom_now[bulan_aktif]:g}%. Selama tahun "
+                            f"{int(last_row['tahun'])}, komoditas yang konsisten mendorong inflasi adalah {str(freq_p_name).title()} "
+                            f"(muncul {freq_p_val}x sebagai Top 10) dan komoditas yang konsisten menahan inflasi adalah "
+                            f"{str(freq_t_name).title()} (muncul {freq_t_val}x sebagai Top 10).",
                         )
 
                 df_harga = apply_filter(get_df("Harga"), (2026, 2026))
@@ -1886,29 +1933,24 @@ elif sub_kategori == "Track Record Inflasi":
     with section_guard("Track Record Inflasi"):
         df_tr = get_df("Inflasi_NTP")
         if df_tr.empty:
-            # Karena page_header butuh judul, kita pasang default jika data kosong
             page_header("📊", "Track Record Inflasi", breadcrumb_path, "Rekam Jejak Inflasi Kabupaten Tanah Laut")
             st.warning("Data inflasi tidak tersedia.")
         else:
             df_tr = df_tr.copy()
             df_tr["bulan_idx"] = df_tr["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
             df_tr = df_tr[df_tr["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
-            
-            # --- MEMBUAT RENTANG WAKTU DINAMIS ---
-            bulan_awal = df_tr["bulan"].iloc[0]
-            tahun_awal = int(df_tr["tahun"].iloc[0])
-            bulan_akhir = df_tr["bulan"].iloc[-1]
-            tahun_akhir = int(df_tr["tahun"].iloc[-1])
-            rentang_waktu = f"{bulan_awal} {tahun_awal} - {bulan_akhir} {tahun_akhir}"
-            # ------------------------------------
 
-            # Sekarang masukkan variabel rentang_waktu ke page_header
+            # Rentang waktu ditampilkan dinamis mengikuti data yang benar-benar ada di
+            # sheet (bukan di-hardcode "Jan 2024 - Jul 2026") - supaya sub-judul selalu
+            # akurat begitu data terbaru ditambahkan tanpa perlu mengedit kode.
+            bulan_awal, tahun_awal = df_tr["bulan"].iloc[0], int(df_tr["tahun"].iloc[0])
+            bulan_akhir, tahun_akhir = df_tr["bulan"].iloc[-1], int(df_tr["tahun"].iloc[-1])
+            rentang_waktu = f"{bulan_awal} {tahun_awal} - {bulan_akhir} {tahun_akhir}"
             page_header("📊", "Track Record Inflasi", breadcrumb_path, f"Rekam Jejak Inflasi Kabupaten Tanah Laut, {rentang_waktu}")
 
             labels_tr = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_tr["bulan"], df_tr["tahun"])]
-      
+
             with st.container(border=True):
-                # Menggunakan variabel rentang_waktu di panel_title
                 panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", rentang_waktu)
                 opts_multi = {
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
@@ -1925,7 +1967,6 @@ elif sub_kategori == "Track Record Inflasi":
                 st_echarts(options=opts_multi, height="400px", key="tr_inflasi_line", theme=e_theme)
 
             with st.container(border=True):
-                # Menggunakan variabel rentang_waktu di panel_title
                 panel_title("Indeks Harga Konsumen (IHK)", rentang_waktu)
                 opts_ihk = {
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
@@ -1937,7 +1978,7 @@ elif sub_kategori == "Track Record Inflasi":
                 st_echarts(options=opts_ihk, height="340px", key="tr_ihk_line", theme=e_theme)
 
             with st.container(border=True):
-                panel_title("Inflasi Year-on-Year Berdasarkan Kelompok Pengeluaran (2022 = 100)", "Pilih maksimal 3 kelompok untuk dibandingkan")
+                panel_title("Inflasi Year-on-Year Berdasarkan Kelompok Pengeluaran", "Pilih maksimal 3 kelompok untuk dibandingkan")
                 df_coicop = get_coicop()
                 if df_coicop.empty:
                     st.info("Data inflasi per kelompok pengeluaran belum tersedia.")
@@ -1946,10 +1987,33 @@ elif sub_kategori == "Track Record Inflasi":
                     df_coicop["bulan_idx"] = df_coicop["bulan"].apply(lambda b: BULAN_URUT.index(b) if b in BULAN_URUT else -1)
                     df_coicop = df_coicop[df_coicop["bulan_idx"] >= 0].sort_values(["tahun", "bulan_idx"]).reset_index(drop=True)
                     kategori_cols = [c for c in df_coicop.columns if c not in ("tahun", "bulan", "bulan_idx")]
+
+                    # Batas maksimal 3 pilihan DITEGAKKAN MANUAL (bukan lewat parameter
+                    # max_selections bawaan st.multiselect) karena dua alasan sekaligus:
+                    # 1) pesan bawaan "You can only select up to 3 options..." berbahasa
+                    #    Inggris dan tidak bisa diubah teksnya/gayanya;
+                    # 2) begitu batas tersentuh, kotak pilihan (tag komoditas) melebar
+                    #    jadi satu baris panjang yang terpotong/harus di-scroll - kurang
+                    #    enak dilihat, terutama di layar sempit.
+                    # Solusinya: kelebihan pilihan di-"potong kembali" ke 3 item TERAKHIR
+                    # yang valid, sebelum widget dibuat di run berikutnya (bukan sesudah -
+                    # itu dilarang Streamlit di run yang sama) - lihat pola yang sama di
+                    # "kepen_wilayah_pending" pada bagian sidebar.
+                    ms_key = "coicop_pilihan"
+                    limit_hit = False
+                    if ms_key in st.session_state and len(st.session_state[ms_key]) > 3:
+                        st.session_state[ms_key] = st.session_state[ms_key][:3]
+                        limit_hit = True
+
                     pilihan = st.multiselect(
-                        "Kelompok Pengeluaran", kategori_cols, default=kategori_cols[:1],
-                        max_selections=3, key="coicop_pilihan",
+                        "Kelompok Pengeluaran", kategori_cols, default=kategori_cols[:1], key=ms_key,
                     )
+                    if limit_hit:
+                        _html(
+                            "<div class='limit-notice'>⚠️ Maksimal 3 kelompok pengeluaran bisa dipilih sekaligus "
+                            "supaya grafik tetap mudah dibaca. Hapus salah satu pilihan dulu sebelum menambahkan yang lain.</div>"
+                        )
+
                     if not pilihan:
                         st.info("Pilih minimal 1 kelompok pengeluaran untuk menampilkan grafik.")
                     else:
