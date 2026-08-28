@@ -372,12 +372,6 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     white-space: normal !important; overflow: visible !important; text-overflow: unset !important;
     word-break: break-word !important; line-height: 1.3 !important;
 }}
-[data-testid="stMultiSelect"] input::placeholder {{
-    color: transparent !important;
-}}
-[data-testid="stMultiSelect"] [data-testid="stWidgetInstruction"] {{
-    display: none !important;
-}}
 /* ---- Notifikasi batas pilihan custom (pengganti pesan bawaan browser/
    BaseWeb "You can only select up to N options" yang berbahasa Inggris
    dan tidak stylable) - dipakai di halaman Track Record Inflasi. ---- */
@@ -2060,6 +2054,12 @@ elif sub_kategori == "Track Record Inflasi":
 
                     if not pilihan:
                         st.info("Pilih minimal 1 kelompok pengeluaran untuk menampilkan grafik.")
+                    elif len(pilihan) > 3:
+                        _html(
+                            "<div class='limit-notice'>⚠️ <b>Maksimal 3 kelompok pengeluaran.</b> "
+                            "Anda memilih terlalu banyak kelompok sehingga grafik akan tumpang tindih dan sulit dibaca. "
+                            "Silakan hapus beberapa pilihan untuk memunculkan grafik.</div>"
+                        )
                     else:
                         labels_co = [f"{BULAN_ABBR3.get(b, b)}-{str(int(t))[2:]}" for b, t in zip(df_coicop["bulan"], df_coicop["tahun"])]
                         series_co = [
