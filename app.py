@@ -107,6 +107,25 @@ BULAN_ABBR_MAP = {"Jan": "Januari", "Feb": "Februari", "Mar": "Maret", "Apr": "A
 # Singkatan 3-huruf dipakai untuk label sumbu-X yang lebih padat di halaman
 # "Track Record Inflasi" (data 31 bulan berturut-turut - label penuh terlalu panjang).
 BULAN_ABBR3 = {"Januari": "Jan", "Februari": "Feb", "Maret": "Mar", "April": "Apr", "Mei": "Mei", "Juni": "Jun", "Juli": "Jul", "Agustus": "Agu", "September": "Sep", "Oktober": "Okt", "November": "Nov", "Desember": "Des"}
+# Nama 11 kelompok pengeluaran (COICOP) di sheet sumber cukup panjang (mis.
+# "Perumahan, Air, Listrik, Gas, dan Bahan Bakar Lainnya") - kalau dipakai
+# apa adanya sebagai label tag di widget multiselect, teksnya kepotong di
+# segala sisi karena tag jadi lebih lebar dari kotak widget. Dipetakan ke
+# versi ringkas HANYA untuk tampilan widget (dropdown & tag terpilih); nilai
+# yang dipakai untuk filter data tetap nama aslinya dari sheet.
+COICOP_SHORT_LABEL = {
+    "Makanan, Minuman, dan Tembakau": "Makanan, Minuman & Tembakau",
+    "Pakaian dan Alas Kaki": "Pakaian & Alas Kaki",
+    "Perumahan, Air, Listrik, Gas, dan Bahan Bakar Lainnya": "Perumahan & Utilitas",
+    "Perlengkapan, Peralatan, dan Pemeliharaan Rutin Rumah Tangga": "Perlengkapan Rumah Tangga",
+    "Kesehatan": "Kesehatan",
+    "Transportasi": "Transportasi",
+    "Informasi, Komunikasi, dan Jasa Keuangan": "Info, Komunikasi & Keuangan",
+    "Rekreasi, Olahraga, dan Budaya": "Rekreasi, Olahraga & Budaya",
+    "Pendidikan": "Pendidikan",
+    "Penyediaan Makanan dan Minuman/Restoran": "Makanan & Minuman Jadi/Restoran",
+    "Perawatan Pribadi dan Jasa Lainnya": "Perawatan Pribadi & Jasa Lainnya",
+}
 
 
 # ==============================================================================
@@ -182,11 +201,14 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 
 /* ---- Kotak dokumen PDF (halaman Inflasi) - kartu klik-utuh berbentuk link,
    supaya klik di mana pun di kartu langsung membuka dokumen. ---- */
-.pdf-card {{ display:flex; align-items:center; gap:14px; background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 18px; text-decoration: none !important; box-shadow: {shadow}; transition: transform 0.15s ease, border-color 0.15s ease; margin-bottom: 10px; }}
+.pdf-card {{ display:flex; align-items:center; gap:14px; background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 18px; text-decoration: none !important; box-shadow: {shadow}; transition: transform 0.15s ease, border-color 0.15s ease; }}
 .pdf-card:hover {{ transform: translateY(-2px); border-color: {PRIMARY}; }}
-.pdf-card-icon {{ font-size: 2rem; line-height: 1; }}
-.pdf-card-title {{ font-weight: 700; font-size: 0.95rem; color: {text}; margin: 0; }}
+.pdf-card-icon {{ font-size: 2rem; line-height: 1; flex-shrink: 0; }}
+.pdf-card-text {{ display: flex; flex-direction: column; }}
+.pdf-card-title {{ font-weight: 700; font-size: 0.95rem; color: {text}; }}
 .pdf-card-sub {{ font-size: 0.8rem; color: {text_muted}; margin-top: 2px; }}
+.pdf-download-link {{ display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: {text_muted}; text-decoration: none !important; margin: 10px 0 0 2px; }}
+.pdf-download-link:hover {{ color: {PRIMARY}; text-decoration: underline !important; }}
 
 /* ---- Panel section (pembungkus chart) ---- */
 .panel-title {{ font-size: 1.02rem; font-weight: 700; color: {text}; margin-bottom: 2px; }}
@@ -326,22 +348,35 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 .stRadio label p, .stRadio div[role="radiogroup"] label {{ color: {text} !important; }}
 [data-testid="stWidgetLabel"] p {{ color: {text} !important; }}
 [data-testid="stMultiSelect"] [role="group"] {{ background-color: {surface} !important; border: 1px solid {border} !important; }}
-[data-testid="stMultiSelect"] span[data-baseweb="tag"] {{ background-color: {PRIMARY} !important; max-width: 100% !important; }}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] {{ background-color: {PRIMARY} !important; }}
 /* ---- Multiselect (mis. pilihan kelompok pengeluaran di "Track Record
    Inflasi"): BaseWeb secara default menaruh semua tag terpilih dalam SATU
-   baris yang di-scroll horizontal kalau tidak muat - kelihatan terpotong
-   dan kurang enak dilihat, apalagi di layar sempit. Dipaksa wrap ke baris
-   baru dan tinggi kotak menyesuaikan otomatis (bukan fixed height). ---- */
+   baris dengan tinggi & lebar tag TETAP, jadi label yang panjang terpotong
+   di segala sisi (atas/bawah kepotong karena tinggi fixed, kiri/kanan
+   kepotong karena text-overflow ellipsis + lebar tag dibatasi). Diperbaiki
+   dua lapis: (1) label panjang sudah dipersingkat lewat format_func di
+   Python sebelum sampai ke widget, (2) sebagai jaring pengaman, kotak
+   pilihan & tag dipaksa wrap otomatis mengikuti tinggi kontennya sendiri
+   (bukan tinggi/lebar tetap), supaya walau ada label yang masih panjang,
+   tetap terbaca utuh alih-alih kepotong. ---- */
+[data-testid="stMultiSelect"] div[data-baseweb="select"] {{ height: auto !important; }}
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div {{
     flex-wrap: wrap !important; height: auto !important; min-height: 44px !important;
+    overflow: visible !important; padding: 6px 8px !important; align-items: center !important;
+}}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] {{
+    height: auto !important; max-width: 100% !important; margin: 3px 4px 3px 0 !important;
     overflow: visible !important; padding: 4px 6px !important;
 }}
-[data-testid="stMultiSelect"] span[data-baseweb="tag"] {{ margin: 3px 4px 3px 0 !important; overflow: visible !important; }}
-[data-testid="stMultiSelect"] span[data-baseweb="tag"] span {{ white-space: normal !important; overflow: visible !important; text-overflow: unset !important; }}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] span {{
+    white-space: normal !important; overflow: visible !important; text-overflow: unset !important;
+    word-break: break-word !important; line-height: 1.3 !important;
+}}
 /* ---- Notifikasi batas pilihan custom (pengganti pesan bawaan browser/
    BaseWeb "You can only select up to N options" yang berbahasa Inggris
    dan tidak stylable) - dipakai di halaman Track Record Inflasi. ---- */
 .limit-notice {{ background-color: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); color: {text}; padding: 9px 14px; border-radius: 8px; font-size: 0.82rem; margin: 6px 0 4px 0; }}
+
 
 /* ---- Expander (mis. "Kamus Istilah") - belum pernah di-cover sebelumnya,
    makanya headernya masih pakai warna gelap default Streamlit walau app
@@ -1762,22 +1797,32 @@ elif sub_kategori == "Inflasi":
                     sub_rilis = f"Dokumen resmi rilis inflasi bulanan Kabupaten Tanah Laut terbaru ({rilis_label_bulan})" if rilis_label_bulan else "Dokumen resmi rilis inflasi bulanan Kabupaten Tanah Laut"
                     panel_title("📄 Bahan Rilis Berita Resmi Statistik (BRS) Inflasi", sub_rilis)
                     if rilis_url:
+                        # PENTING: konten di dalam <a> HARUS berupa elemen inline (<span>),
+                        # bukan <div>/<p> - versi sebelumnya menaruh <div><p>...</p></div> di
+                        # dalam <a>, dan itu membuat renderer markdown Streamlit memecah
+                        # tiap elemen jadi "kotak" terpisah-pisah (persis gejala di screenshot:
+                        # ikon, judul, dan subjudul masing-masing muncul sebagai box sendiri).
+                        # Dengan <span> semua, satu kartu tetap jadi SATU blok utuh.
                         _html(
-                            f"<a class='pdf-card' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>",
-                            "<div class='pdf-card-icon'>📄</div>",
-                            "<div><p class='pdf-card-title'>Buka Dokumen Rilis Inflasi</p>"
-                            "<p class='pdf-card-sub'>Klik untuk membuka PDF di tab baru (desktop) / pembuka PDF (HP) — tanpa perlu diunduh</p></div>",
-                            "</a>",
+                            f"<a class='pdf-card' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>"
+                            "<span class='pdf-card-icon'>📄</span>"
+                            "<span class='pdf-card-text'>"
+                            "<span class='pdf-card-title'>Buka Dokumen Rilis Inflasi</span>"
+                            "<span class='pdf-card-sub'>Klik untuk membuka PDF di tab baru (desktop) / pembuka PDF (HP) — tanpa perlu diunduh</span>"
+                            "</span>"
+                            "</a>"
                         )
+                        # Tautan unduh cadangan dibuat kecil & sekunder (bukan kartu penuh
+                        # lagi) supaya tidak menambah "kotak" baru - cukup satu baris teks
+                        # kecil di bawah kartu utama, sesuai masukan bahwa terlalu banyak
+                        # kotak di bagian ini kurang enak dilihat.
                         file_id = extract_drive_file_id(rilis_url)
                         if file_id:
                             download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
                             _html(
-                                f"<a class='pdf-card' style='border-left-color:{ACCENT};' href='{download_url}' target='_blank' rel='noopener noreferrer'>",
-                                "<div class='pdf-card-icon'>📥</div>",
-                                "<div><p class='pdf-card-title'>Unduh PDF Rilis Inflasi (cadangan)</p>"
-                                "<p class='pdf-card-sub'>Mengunduh berkas langsung dari Google Drive</p></div>",
-                                "</a>",
+                                f"<a class='pdf-download-link' href='{download_url}' target='_blank' rel='noopener noreferrer'>"
+                                "📥 Unduh PDF (cadangan) — langsung dari Google Drive"
+                                "</a>"
                             )
                     else:
                         st.info(
@@ -2007,6 +2052,7 @@ elif sub_kategori == "Track Record Inflasi":
 
                     pilihan = st.multiselect(
                         "Kelompok Pengeluaran", kategori_cols, default=kategori_cols[:1], key=ms_key,
+                        format_func=lambda k: COICOP_SHORT_LABEL.get(k, k),
                     )
                     if limit_hit:
                         _html(
