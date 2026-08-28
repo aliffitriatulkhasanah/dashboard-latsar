@@ -1811,7 +1811,6 @@ elif sub_kategori == "Inflasi":
                             "<span class='pdf-card-icon'>📄</span>"
                             "<span class='pdf-card-text'>"
                             "<span class='pdf-card-title'>Buka Dokumen Rilis Inflasi</span>"
-                            "<span class='pdf-card-sub'>Klik untuk membuka PDF di tab baru (desktop) / pembuka PDF (HP) — tanpa perlu diunduh</span>"
                             "</span>"
                             "</a>"
                         )
@@ -1824,7 +1823,7 @@ elif sub_kategori == "Inflasi":
                             download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
                             _html(
                                 f"<a class='pdf-download-link' href='{download_url}' target='_blank' rel='noopener noreferrer'>"
-                                "📥 Unduh PDF (cadangan) — langsung dari Google Drive"
+                                "📥 Unduh PDF"
                                 "</a>"
                             )
                     else:
