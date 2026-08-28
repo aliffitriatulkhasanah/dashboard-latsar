@@ -146,7 +146,7 @@ def inject_css(dark: bool):
     bg = "#0B1120" if dark else "#F7F9FC"
     surface = "#161B29" if dark else "#FFFFFF"
     sidebar_bg = "#111827" if dark else "#FFFFFF"
-    text = "#E5E7EB" if dark else "#1F2937"
+    text = "#E5E7EB" if dark else "#1F2937"g
     text_muted = "#9CA3AF" if dark else "#6B7280"
     border = "rgba(255,255,255,0.08)" if dark else "rgba(15,23,42,0.08)"
     shadow = "0 1px 3px rgba(0,0,0,0.4)" if dark else "0 1px 3px rgba(15,23,42,0.06)"
@@ -359,6 +359,17 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
    pilihan & tag dipaksa wrap otomatis mengikuti tinggi kontennya sendiri
    (bukan tinggi/lebar tetap), supaya walau ada label yang masih panjang,
    tetap terbaca utuh alih-alih kepotong. ---- */
+/* Menghilangkan background putih pada input DAN elemen pembungkusnya */
+[data-testid="stMultiSelect"] input[role="combobox"],
+[data-testid="stMultiSelect"] input[aria-autocomplete="list"] {{
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}}
+/* Menjinakkan wildcard sebelumnya agar area kosong di sebelah input tidak ikut berwarna putih */
+[data-testid="stMultiSelect"] div[data-baseweb="select"] > div > div {{
+    background-color: transparent !important;
+}}
 [data-testid="stMultiSelect"] div[data-baseweb="select"] {{ height: auto !important; }}
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div {{
     flex-wrap: wrap !important; height: auto !important; min-height: 44px !important;
@@ -371,11 +382,6 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] span {{
     white-space: normal !important; overflow: visible !important; text-overflow: unset !important;
     word-break: break-word !important; line-height: 1.3 !important;
-}}
-[data-testid="stMultiSelect"] input[role="combobox"] {{
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
 }}
 /* ---- Notifikasi batas pilihan custom (pengganti pesan bawaan browser/
    BaseWeb "You can only select up to N options" yang berbahasa Inggris
