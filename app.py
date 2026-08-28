@@ -146,7 +146,7 @@ def inject_css(dark: bool):
     bg = "#0B1120" if dark else "#F7F9FC"
     surface = "#161B29" if dark else "#FFFFFF"
     sidebar_bg = "#111827" if dark else "#FFFFFF"
-    text = "#E5E7EB" if dark else "#1F2937"g
+    text = "#E5E7EB" if dark else "#1F2937"
     text_muted = "#9CA3AF" if dark else "#6B7280"
     border = "rgba(255,255,255,0.08)" if dark else "rgba(15,23,42,0.08)"
     shadow = "0 1px 3px rgba(0,0,0,0.4)" if dark else "0 1px 3px rgba(15,23,42,0.06)"
