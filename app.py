@@ -359,17 +359,6 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
    pilihan & tag dipaksa wrap otomatis mengikuti tinggi kontennya sendiri
    (bukan tinggi/lebar tetap), supaya walau ada label yang masih panjang,
    tetap terbaca utuh alih-alih kepotong. ---- */
-/* Menghilangkan background putih pada input DAN elemen pembungkusnya */
-[data-testid="stMultiSelect"] input[role="combobox"],
-[data-testid="stMultiSelect"] input[aria-autocomplete="list"] {{
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}}
-/* Menjinakkan wildcard sebelumnya agar area kosong di sebelah input tidak ikut berwarna putih */
-[data-testid="stMultiSelect"] div[data-baseweb="select"] > div > div {{
-    background-color: transparent !important;
-}}
 [data-testid="stMultiSelect"] div[data-baseweb="select"] {{ height: auto !important; }}
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div {{
     flex-wrap: wrap !important; height: auto !important; min-height: 44px !important;
@@ -382,6 +371,9 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] span {{
     white-space: normal !important; overflow: visible !important; text-overflow: unset !important;
     word-break: break-word !important; line-height: 1.3 !important;
+}}
+[data-testid="stMultiSelect"] div:has(> input[role="combobox"]) {{
+    color:transparent !important; opacity: 0 !important;
 }}
 /* ---- Notifikasi batas pilihan custom (pengganti pesan bawaan browser/
    BaseWeb "You can only select up to N options" yang berbahasa Inggris
