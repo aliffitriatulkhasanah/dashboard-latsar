@@ -1806,14 +1806,6 @@ elif sub_kategori == "Inflasi":
                         # tiap elemen jadi "kotak" terpisah-pisah (persis gejala di screenshot:
                         # ikon, judul, dan subjudul masing-masing muncul sebagai box sendiri).
                         # Dengan <span> semua, satu kartu tetap jadi SATU blok utuh.
-                        _html(
-                            f"<a class='pdf-card' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>"
-                            "<span class='pdf-card-icon'>📄</span>"
-                            "<span class='pdf-card-text'>"
-                            "<span class='pdf-card-title'>Buka Dokumen Rilis Inflasi</span>"
-                            "</span>"
-                            "</a>"
-                        )
                         # Tautan unduh cadangan dibuat kecil & sekunder (bukan kartu penuh
                         # lagi) supaya tidak menambah "kotak" baru - cukup satu baris teks
                         # kecil di bawah kartu utama, sesuai masukan bahwa terlalu banyak
@@ -1822,10 +1814,24 @@ elif sub_kategori == "Inflasi":
                         if file_id:
                             download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
                             _html(
-                                f"<a class='pdf-download-link' href='{download_url}' target='_blank' rel='noopener noreferrer'>"
+                                f"<a class='pdf-card' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>"
+                                "<span class='pdf-card-icon'>📄</span>"
+                                "<span class='pdf-card-text'>"
+                                "<span class='pdf-card-title'>Buka Dokumen Rilis Inflasi</span>"
+                                "<span class='pdf-download-link'><a href='{download_url}' target='_blank' rel='noopener noreferrer'>"
                                 "📥 Unduh PDF"
+                                "</a></span>"
                                 "</a>"
                             )
+                        else:
+                            _html(
+                              f"<a class='pdf-card' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>"
+                              "<span class='pdf-card-icon'>📄</span>"
+                              "<span class='pdf-card-text'>"
+                              "<span class='pdf-card-title'>Buka Dokumen Rilis Inflasi</span>"
+                              "</span>"
+                              "</a>"
+                          )
                     else:
                         st.info(
                             "📄 Dokumen rilis inflasi belum tersedia. Isi link Google Drive PDF-nya di sheet "
