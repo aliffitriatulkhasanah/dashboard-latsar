@@ -372,6 +372,9 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     white-space: normal !important; overflow: visible !important; text-overflow: unset !important;
     word-break: break-word !important; line-height: 1.3 !important;
 }}
+[data-testid="stMultiSelect"] div[data-baseweb="select"] input {{
+    background-color: transparent !important;
+}}
 /* ---- Notifikasi batas pilihan custom (pengganti pesan bawaan browser/
    BaseWeb "You can only select up to N options" yang berbahasa Inggris
    dan tidak stylable) - dipakai di halaman Track Record Inflasi. ---- */
