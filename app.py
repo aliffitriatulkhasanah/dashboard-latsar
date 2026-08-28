@@ -201,14 +201,14 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 
 /* ---- Kotak dokumen PDF (halaman Inflasi) - kartu klik-utuh berbentuk link,
    supaya klik di mana pun di kartu langsung membuka dokumen. ---- */
-.pdf-card {{ display:flex; align-items:center; gap:14px; background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 18px; text-decoration: none !important; box-shadow: {shadow}; transition: transform 0.15s ease, border-color 0.15s ease; }}
-.pdf-card:hover {{ transform: translateY(-2px); border-color: {PRIMARY}; }}
-.pdf-card-icon {{ font-size: 2rem; line-height: 1; flex-shrink: 0; }}
-.pdf-card-text {{ display: flex; flex-direction: column; }}
-.pdf-card-title {{ font-weight: 700; font-size: 0.95rem; color: {text}; }}
-.pdf-card-sub {{ font-size: 0.8rem; color: {text_muted}; margin-top: 2px; }}
-.pdf-download-link {{ display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: {text_muted}; text-decoration: none !important; margin: 10px 0 0 2px; }}
-.pdf-download-link:hover {{ color: {PRIMARY}; text-decoration: underline !important; }}
+.pdf-card {{ display:flex; align-items:flex-start; gap:14px; background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 18px; box-shadow: {shadow}; margin-bottom: 10px; }}
+.pdf-card-icon {{ font-size: 2rem; line-height: 1; flex-shrink: 0; margin-top: 2px; }}
+.pdf-card-text {{ display: flex; flex-direction: column; align-items: flex-start; }}
+.pdf-card-title {{ font-weight: 700; font-size: 0.95rem; color: {text}; text-decoration: none !important; transition: color 0.15s; }}
+.pdf-card-title:hover {{ color: {PRIMARY}; text-decoration: underline !important; }}
+.pdf-card-sub {{ font-size: 0.8rem; color: {text_muted}; margin-top: 4px; margin-bottom: 12px; }}
+.pdf-badge {{ display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; background-color: {"#374151" if dark else "#E5E7EB"}; color: {text} !important; border-radius: 6px; text-decoration: none !important; transition: background-color 0.15s; }}
+.pdf-badge:hover {{ background-color: {"#4B5563" if dark else "#D1D5DB"}; }}
 
 /* ---- Panel section (pembungkus chart) ---- */
 .panel-title {{ font-size: 1.02rem; font-weight: 700; color: {text}; margin-bottom: 2px; }}
@@ -372,8 +372,10 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     white-space: normal !important; overflow: visible !important; text-overflow: unset !important;
     word-break: break-word !important; line-height: 1.3 !important;
 }}
-[data-testid="stMultiSelect"] div[data-baseweb="select"] input {{
+[data-testid="stMultiSelect"] input[role="combobox"] {{
     background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }}
 /* ---- Notifikasi batas pilihan custom (pengganti pesan bawaan browser/
    BaseWeb "You can only select up to N options" yang berbahasa Inggris
@@ -1811,27 +1813,20 @@ elif sub_kategori == "Inflasi":
                         # kecil di bawah kartu utama, sesuai masukan bahwa terlalu banyak
                         # kotak di bagian ini kurang enak dilihat.
                         file_id = extract_drive_file_id(rilis_url)
+                        badge_html = ""
                         if file_id:
                             download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-                            _html(
-                                f"<a class='pdf-card' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>"
-                                "<span class='pdf-card-icon'>📄</span>"
-                                "<span class='pdf-card-text'>"
-                                "<span class='pdf-card-title'>Buka Dokumen Rilis Inflasi</span>"
-                                "<span class='pdf-download-link'><a href='{download_url}' target='_blank' rel='noopener noreferrer'>"
-                                "📥 Unduh PDF"
-                                "</a></span>"
-                                "</a>"
-                            )
-                        else:
-                            _html(
-                              f"<a class='pdf-card' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>"
-                              "<span class='pdf-card-icon'>📄</span>"
-                              "<span class='pdf-card-text'>"
-                              "<span class='pdf-card-title'>Buka Dokumen Rilis Inflasi</span>"
-                              "</span>"
-                              "</a>"
-                          )
+                            badge_html = f"<a class='pdf-badge' href='{download_url}' target='_blank' rel='noopener noreferrer'>📥 Unduh PDF</a>"
+                        _html(
+                            f"<div class='pdf-card'>"
+                            f"<span class='pdf-card-icon'>📄</span>"
+                            f"<div class='pdf-card-text'>"
+                            f"<a class='pdf-card-title' href='{html.escape(rilis_url)}' target='_blank' rel='noopener noreferrer'>Buka Dokumen Rilis Inflasi</a>"
+                            f"<span class='pdf-card-sub'>Klik judul untuk melihat, atau gunakan tombol di bawah untuk mengunduh.</span>"
+                            f"{badge_html}"
+                            f"</div>"
+                            f"</div>"
+                        )
                     else:
                         st.info(
                             "📄 Dokumen rilis inflasi belum tersedia. Isi link Google Drive PDF-nya di sheet "
