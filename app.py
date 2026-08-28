@@ -2051,20 +2051,12 @@ elif sub_kategori == "Track Record Inflasi":
                     # itu dilarang Streamlit di run yang sama) - lihat pola yang sama di
                     # "kepen_wilayah_pending" pada bagian sidebar.
                     ms_key = "coicop_pilihan"
-                    limit_hit = False
-                    if ms_key in st.session_state and len(st.session_state[ms_key]) > 3:
-                        st.session_state[ms_key] = st.session_state[ms_key][:3]
-                        limit_hit = True
 
                     pilihan = st.multiselect(
                         "Kelompok Pengeluaran", kategori_cols, default=kategori_cols[:1], key=ms_key,
                         format_func=lambda k: COICOP_SHORT_LABEL.get(k, k),
+                        max_selections=3
                     )
-                    if limit_hit:
-                        _html(
-                            "<div class='limit-notice'>⚠️ Maksimal 3 kelompok pengeluaran bisa dipilih sekaligus "
-                            "supaya grafik tetap mudah dibaca. Hapus salah satu pilihan dulu sebelum menambahkan yang lain.</div>"
-                        )
 
                     if not pilihan:
                         st.info("Pilih minimal 1 kelompok pengeluaran untuk menampilkan grafik.")
