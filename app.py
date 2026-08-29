@@ -1689,9 +1689,9 @@ elif sub_kategori == "IPM":
                             prev_i["tahun"] if prev_i is not None else np.nan,
                         )
 
-            sparkline_kpi_card(c_uhh, "Usia Harapan Hidup", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0])
-            sparkline_kpi_card(c_hls, "Harapan Lama Sekolah", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0])
-            sparkline_kpi_card(c_rls, "Rata-rata Lama Sekolah", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0])
+            sparkline_kpi_card(c_uhh, "Usia Harapan Hidup (UHH)", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0])
+            sparkline_kpi_card(c_hls, "Harapan Lama Sekolah (HLS)", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0])
+            sparkline_kpi_card(c_rls, "Rata-rata Lama Sekolah (RLS)", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0])
             sparkline_kpi_card(c_peng, "Pengeluaran/Kapita Disesuaikan", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0])
 
             if not df_i_valid.empty:
