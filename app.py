@@ -184,10 +184,8 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .metric-card .m-value {{ font-size: 1.65rem; font-weight: 800; color: {text}; line-height: 1.1; margin-top: 6px; }}
 .metric-card .m-trend {{ font-size: 0.76rem; font-weight: 700; }}
 
-/* ---- Kartu metrik varian OUTLINE (khusus landing page "Dashboard Utama" -
-   sesuai prototype: kotak dengan border oranye/emas tipis, tanpa fill warna,
-   label di atas dan angka besar di bawah, rata tengah) ---- */
-.metric-card-outline {{ background-color: {surface}; border: 1.5px solid {ACCENT}; border-radius: 10px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
+/* ---- Kartu metrik varian OUTLINE (khusus landing page "Dashboard Utama" ---- */
+.metric-card-outline {{ background-color: #EEE0CC; border: 2px solid #7B2525; border-radius: 10px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
 .metric-card-outline:hover {{ transform: translateY(-2px); box-shadow: {shadow}; }}
 .metric-card-outline .mo-label {{ font-size: 0.78rem; font-weight: 700; color: {text_muted}; }}
 .metric-card-outline .mo-value {{ font-size: 1.5rem; font-weight: 800; color: {text}; }}
