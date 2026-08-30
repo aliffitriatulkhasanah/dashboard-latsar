@@ -1318,7 +1318,7 @@ if kategori == "Dashboard Utama":
                     # Penyesuaian batas wilayah & gradasi warna (Terang -> Gelap)
                     map_border = "#94A3B8" if tema_gelap else "#64748B"
                     # Warna gradasi: Terang (penduduk sedikit) ke Gelap (penduduk banyak)
-                    gradasi_warna = ["#E8DFCA", "#CFAB8D", "#B87C4C"] if tema_gelap else ["#F7C85C", "#A4CE8B", "#86BCBD"]
+                    gradasi_warna = ["#E8DFCA", "#CFAB8D", "#B87C4C"] if tema_gelap else ["#EDF7BD", "#85C79A", "#4E8D9C"]
 
                     map_opts = {
                         "backgroundColor": "transparent",
