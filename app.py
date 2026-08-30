@@ -1265,7 +1265,7 @@ with st.sidebar:
     _html(
         "<div class='sidebar-footer'>",
         "<div class='sidebar-footer-title'>Informasi Selengkapnya</div>",
-        "<a class='sidebar-footer-link' href='#' target='_blank' rel='noopener noreferrer'>form kritik dan saran</a>",
+        "<a class='sidebar-footer-link' href='https://forms.gle/EuhfVVdZ2toVCiX46' target='_blank' rel='noopener noreferrer'>Formulir Kritik dan Saran</a>",
         "<a class='sidebar-footer-link' href='https://wa.me/6281388886301' target='_blank' rel='noopener noreferrer'>+62 813-8888-6301 (WA)</a>"
         "<a class='sidebar-footer-link' href='https://instagram.com/bps_tanahlaut' target='_blank' rel='noopener noreferrer'>@bps_tanahlaut (Instagram)</a>",
         "</div>",
@@ -1799,7 +1799,7 @@ elif sub_kategori == "Inflasi":
 
                 with st.container(border=True):
                     sub_rilis = f"Dokumen resmi rilis inflasi bulanan Kabupaten Tanah Laut terbaru ({rilis_label_bulan})" if rilis_label_bulan else "Dokumen resmi rilis inflasi bulanan Kabupaten Tanah Laut"
-                    panel_title("📄 Bahan Rilis Berita Resmi Statistik (BRS) Inflasi", sub_rilis)
+                    panel_title("📄 Bahan Rilis Inflasi", sub_rilis)
                     if rilis_url:
                         # PENTING: konten di dalam <a> HARUS berupa elemen inline (<span>),
                         # bukan <div>/<p> - versi sebelumnya menaruh <div><p>...</p></div> di
