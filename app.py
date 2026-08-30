@@ -1036,7 +1036,7 @@ def mini_trend_panel(col, title: str, years: list, values: list, color: str, dec
             opts = {
                 "backgroundColor": "transparent",
                 "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "6%"},
-                "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                 "xAxis": {"type": "category", "data": years_clean, "axisLabel": {"fontSize": 10}, "axisLine": {"show": False}, "axisTick": {"show": False}},
                 "yAxis": {"type": "value", "show": False},
                 "series": [{
@@ -1076,7 +1076,7 @@ def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_
                 opts = {
                     "backgroundColor": "transparent",
                     "grid": {"top": "8%", "bottom": "2%", "left": "2%", "right": "2%"},
-                    "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                    "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                     "xAxis": {"type": "category", "data": labels_clean, "show": False},
                     "yAxis": {"type": "value", "show": False, "scale": True},
                     "series": [series_def],
@@ -1324,6 +1324,7 @@ if kategori == "Dashboard Utama":
                         "backgroundColor": "transparent",
                         "tooltip": {
                             "trigger": "item",
+                            "confine": True,
                             "formatter": JsCode(
                                 "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
                                 "return '<b>'+p.name+'</b><br/>Jumlah Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
@@ -1410,7 +1411,7 @@ elif sub_kategori == "Kependudukan":
                         panel_title("Jumlah dan Pertumbuhan Penduduk", "Klik titik tahun untuk melihat kepadatan & rasio JK tahun tersebut")
                         kep_opts = {
                             "backgroundColor": "transparent",
-                            "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                            "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                             "legend": {"bottom": 0},
                             "xAxis": {"type": "category", "data": [str(y) for y in years_k]},
                             "yAxis": [{"type": "value", "name": "Jiwa"}, {"type": "value", "name": "%", "splitLine": {"show": False}}],
@@ -1454,7 +1455,7 @@ elif sub_kategori == "Kependudukan":
                                 map_border_dens = "#1F2937" if tema_gelap else "#6B5B45"
                                 map_opts = {
                                     "backgroundColor": "transparent",
-                                    "tooltip": {"trigger": "item", "formatter": JsCode(
+                                    "tooltip": {"trigger": "item", "confine": True, "formatter": JsCode(
                                         "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
                                         "return '<b>'+p.name+'</b><br/>Kepadatan: <b>'+Number(p.value).toLocaleString('id-ID')+' jiwa/km\u00b2</b><br/>Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
                                     )},
@@ -1485,7 +1486,7 @@ elif sub_kategori == "Kependudukan":
                         panel_title("Penduduk Berdasarkan Jenis Kelamin")
                         gender_opts = {
                             "backgroundColor": "transparent",
-                            "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                            "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                             "legend": {"bottom": 0},
                             "xAxis": {"type": "category", "data": [str(y) for y in years_k]},
                             "yAxis": {"type": "value"},
@@ -1526,7 +1527,7 @@ elif sub_kategori == "Tenaga Kerja":
                     panel_title("Perkembangan TPT dan TPAK", "Klik titik tahun untuk melihat rincian di bawahnya")
                     tk_opts = {
                         "backgroundColor": "transparent",
-                        "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                        "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                         "legend": {"bottom": 0},
                         "xAxis": {"type": "category", "data": [str(y) for y in years_tk]},
                         "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
@@ -1597,7 +1598,7 @@ elif sub_kategori == "Tenaga Kerja":
                         ]
                     stack_opts = {
                         "backgroundColor": "transparent",
-                        "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}, "formatter": FMT_ID},
+                        "tooltip": {"trigger": "axis", "confine": True, "axisPointer": {"type": "shadow"}, "formatter": FMT_ID},
                         "legend": {"bottom": 0},
                         "xAxis": {"type": "category", "data": [str(y) for y in years_tk]},
                         "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
@@ -1635,7 +1636,7 @@ elif sub_kategori == "Kemiskinan":
                 with st.container(border=True):
                     panel_title("Jumlah Penduduk Miskin dan Garis Kemiskinan")
                     dual_opts = {
-                        "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
+                        "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "axisPointer": {"type": "cross"}},
                         "legend": {"bottom": 0},
                         "xAxis": {"type": "category", "data": [str(y) for y in years_m]},
                         "yAxis": [{"type": "value", "name": "Jiwa"}, {"type": "value", "name": "Rupiah", "splitLine": {"show": False}}],
@@ -1702,7 +1703,7 @@ elif sub_kategori == "IPM":
             with st.container(border=True):
                 panel_title("Perbandingan IPM Tanah Laut dan Kalimantan Selatan")
                 ipm_opts = {
-                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                     "legend": {"bottom": 0},
                     "xAxis": {"type": "category", "data": [str(y) for y in years_i]},
                     "yAxis": {"type": "value", "scale": True},
@@ -1895,7 +1896,7 @@ elif sub_kategori == "Inflasi":
                             panel_title("Komoditas Utama Pendorong Inflasi M-to-M", "Bubble = frekuensi masuk Top 10 (min. 3x) sepanjang 2026")
                             if bubble_pendorong:
                                 opts = {
-                                    "backgroundColor": "transparent", "tooltip": {"formatter": tooltip_js},
+                                    "backgroundColor": "transparent", "tooltip": {"confine": True, "formatter": tooltip_js},
                                     "xAxis": {"type": "value", "name": "IHK Bulan Berjalan", "nameLocation": "middle", "nameGap": 28},
                                     "yAxis": {"type": "value", "name": "Andil Bulan Berjalan (%)"},
                                     "series": [{"type": "scatter", "data": bubble_pendorong, "symbolSize": size_js, "itemStyle": {"color": COLORS[3], "opacity": 0.75}, "label": {"show": True, "formatter": "{b}", "position": "top", "fontSize": 9}}],
@@ -1908,7 +1909,7 @@ elif sub_kategori == "Inflasi":
                             panel_title("Komoditas Utama Penahan Inflasi M-to-M", "Bubble = frekuensi masuk Top 10 (min. 3x) sepanjang 2026")
                             if bubble_penahan:
                                 opts = {
-                                    "backgroundColor": "transparent", "tooltip": {"formatter": tooltip_js},
+                                    "backgroundColor": "transparent", "tooltip": {"confine": True, "formatter": tooltip_js},
                                     "xAxis": {"type": "value", "name": "IHK Bulan Berjalan", "nameLocation": "middle", "nameGap": 28},
                                     "yAxis": {"type": "value", "name": "Andil Bulan Berjalan (%)"},
                                     "series": [{"type": "scatter", "data": bubble_penahan, "symbolSize": size_js, "itemStyle": {"color": COLORS[0], "opacity": 0.75}, "label": {"show": True, "formatter": "{b}", "position": "top", "fontSize": 9}}],
@@ -1960,7 +1961,7 @@ elif sub_kategori == "Inflasi":
                                 with st.container(border=True):
                                     series = [{"name": label, "type": "line", "data": df_harga_f[col].tolist(), "smooth": True, "symbolSize": 0, "itemStyle": {"color": COLORS[idx % len(COLORS)]}} for idx, (label, col) in enumerate(group)]
                                     opts = {
-                                        "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                                        "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                                         # grid diberi jarak eksplisit dari tepi (containLabel: true supaya
                                         # label sumbu-Y ikut dihitung) - sebelumnya tanpa "grid" sama sekali,
                                         # jadi saat legend (5 item) wrap ke 2 baris di layar sempit, ia
@@ -2006,7 +2007,7 @@ elif sub_kategori == "Track Record Inflasi":
             with st.container(border=True):
                 panel_title("Inflasi Month-to-Month, Year-to-Date, dan Year-on-Year", rentang_waktu)
                 opts_multi = {
-                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                     "legend": {"bottom": 0},
                     "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
                     "xAxis": {"type": "category", "data": labels_tr, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
@@ -2074,7 +2075,7 @@ elif sub_kategori == "Track Record Inflasi":
                             for i, k in enumerate(pilihan)
                         ]
                         opts_co = {
-                            "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                            "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                             "legend": {"bottom": 0, "type": "scroll", "textStyle": {"fontSize": 10}},
                             "grid": {"top": "8%", "bottom": "20%", "left": "6%", "right": "4%", "containLabel": True},
                             "xAxis": {"type": "category", "data": labels_co, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
@@ -2094,7 +2095,7 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
             with st.container(border=True):
                 panel_title("Laju Pertumbuhan Ekonomi vs PDRB per Kapita", "Klik titik tahun untuk melihat distribusi PDRB di bawah")
                 growth_opts = {
-                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
+                    "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                     "legend": {"bottom": 0},
                     "xAxis": {"type": "category", "data": [str(y) for y in years_p], "name": "tahun", "nameLocation": "middle", "nameGap": 30},
                     "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
@@ -2143,7 +2144,7 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
                                 donut_data = _donut_grouped(df_kat_year)
                                 opts = {
                                     "backgroundColor": "transparent", "color": COLORS,
-                                    "tooltip": {"formatter": "{b}: {c}%"},
+                                    "tooltip": {"confine": True, "formatter": "{b}: {c}%"},
                                     # Pie digeser ke atas (center Y 38%) & radius diperkecil supaya
                                     # ada ruang tersisa di bawah untuk legend - sebelumnya radius
                                     # 45-70% nyaris memenuhi tinggi container, jadi begitu legend
@@ -2180,7 +2181,7 @@ elif kategori == "Pertanian":
                     with st.container(border=True):
                         panel_title(f"Luas Panen dan Produksi {komoditas_nama}")
                         pt_opts = {
-                            "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}, "formatter": FMT_ID},
+                            "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "axisPointer": {"type": "cross"}, "formatter": FMT_ID},
                             "legend": {"bottom": 0},
                             "xAxis": {"type": "category", "data": df_kom["tahun"].astype(str).tolist()},
                             "yAxis": [{"type": "value", "name": "Ha", "splitLine": {"show": False}}, {"type": "value", "name": "Ton"}],
