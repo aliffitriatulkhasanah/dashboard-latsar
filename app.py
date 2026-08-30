@@ -1316,7 +1316,7 @@ if kategori == "Dashboard Utama":
                     vmax = max(pddk_vals) if pddk_vals else 100000
 
                     # Penyesuaian batas wilayah & gradasi warna (Terang -> Gelap)
-                    map_border = "#94A3B8" if tema_gelap else "#64748B"
+                    map_border = "#607456" if tema_gelap else "#64748B"
                     # Warna gradasi: Terang (penduduk sedikit) ke Gelap (penduduk banyak)
                     gradasi_warna = ["#E8DFCA", "#CFAB8D", "#B87C4C"] if tema_gelap else ["#F7E49B", "#86BCBD", "#A4CE8B", "#BA5A5A"]
 
