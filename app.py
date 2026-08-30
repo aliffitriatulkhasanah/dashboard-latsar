@@ -1560,7 +1560,7 @@ elif sub_kategori == "Tenaga Kerja":
                     tpak_val = row_tk["tpak"] if pd.notna(row_tk["tpak"]) else 0
                     donut_opts = {
                         "backgroundColor": "transparent",
-                        "tooltip": {"formatter": "{b}: {c}%"},
+                        "tooltip": {"confine": True, "formatter": "{b}: {c}%"},
                         "series": [{
                             "type": "pie", "radius": ["55%", "75%"], "avoidLabelOverlap": True, "label": {"show": False},
                             "data": [
