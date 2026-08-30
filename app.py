@@ -1768,7 +1768,7 @@ elif sub_kategori == "Inflasi":
                 dtxt, ddir = _delta("inflasi_ytd")
                 sparkline_kpi_card(c3, "Inflasi Year-to-Date", f"{last_row['inflasi_ytd']:g}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_ytd"].tolist(), COLORS[1])
                 dtxt, ddir = _delta("inflasi_yoy")
-                sparkline_kpi_card(c4, "Inflasi Year-on-Year", f"{last_row['inflasi_yoy']:g}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_yoy"].tolist(), COLORS[2])
+                sparkline_kpi_card(c4, "Inflasi Year-on-Year", f"{last_row['inflasi_yoy']:g}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_yoy"].tolist(), COLORS[5])
 
                 insight_box(
                     "Interpretasi",
