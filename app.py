@@ -223,7 +223,8 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .donut-center .dc-value {{ font-size: 1.5rem; font-weight: 800; color: {PRIMARY}; }}
 
 /* ---- Kartu hero IPM (lebih besar dari metric-card biasa, sesuai desain) ---- */
-.ipm-hero {{ background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
+.ipm-hero {{ box-sizing: border-box; min-height: 226px; background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
+div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ min-height: 226px; box-sizing: border-box; }}
 .ipm-hero-label {{ font-size: 0.85rem; font-weight: 700; color: {text_muted}; text-transform: uppercase; letter-spacing: 0.4px; }}
 .ipm-hero-row {{ display: flex; align-items: baseline; gap: 12px; margin-top: 8px; }}
 .ipm-hero-value {{ font-size: 2.4rem; font-weight: 900; color: {text}; }}
@@ -286,11 +287,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 /* ---- Tabel varian header berwarna (dipakai untuk tabel NTP / PDRB di
    halaman Pertanian & Pertumbuhan Ekonomi, sesuai skema warna prototype) ---- */
-.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #EFC24D; }}
+.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #E9BE4B; }}
 .table-scroll.tbl-yellow .custom-table thead th {{ color: #1F2937 !important; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #C8E3D0; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #E5F1E9; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #F3D67C; font-weight: 700; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #C2DFC9; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #E0EEE5; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #EFD174; font-weight: 700; }}
 /* Latar sel di atas SELALU pastel terang (fixed, tidak ikut tema) - jadi
    warna teksnya juga WAJIB dipaksa gelap terus-menerus, supaya di mode
    gelap teksnya tidak ikut jadi putih/abu-abu terang (tak terbaca di atas
@@ -300,12 +301,12 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 .pdrb-table {{ width: 100%; border-collapse: collapse; font-size: 0.88em; text-align: center; }}
 .pdrb-table th, .pdrb-table td {{ padding: 9px 12px; border: 1px solid {border}; }}
-.pdrb-table thead th.grp-tahun {{ background-color: #E8CE86; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-nilai {{ background-color: #B9D8EE; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-perkap {{ background-color: #E7C6D8; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-tahun {{ background-color: #F3E7EE; color: #1F2937 !important; font-weight: 700; }}
-.pdrb-table tbody td.col-nilai {{ background-color: #DFEDF7; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-perkap {{ background-color: #F8EAF1; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-tahun {{ background-color: #DDC77F; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-nilai {{ background-color: #A7CCE5; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-perkap {{ background-color: #DCB5CB; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-tahun {{ background-color: #E9DDE4; color: #1F2937 !important; font-weight: 700; }}
+.pdrb-table tbody td.col-nilai {{ background-color: #CFE3F1; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-perkap {{ background-color: #F0DEE7; color: #1F2937 !important; }}
 
 /* ---- Heatmap gender (IPM) ---- */
 .gender-heat-table {{ width: 100%; border-collapse: collapse; font-size: 0.86em; text-align: center; }}
@@ -475,6 +476,8 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     .pdf-card-icon {{ font-size: 1.5rem; }}
     .pdf-card-title {{ font-size: 0.88rem; }}
     .pdf-card-sub {{ font-size: 0.75rem; }}
+    .ipm-hero {{ min-height: 196px; padding: 16px 18px; }}
+    div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ min-height: 196px; }}
     /* Kartu/panel di dalam st.container(border=True) diberi jarak bawah
        sedikit lebih besar supaya tidak terasa berdempetan saat kolom-kolom
        ikut stack vertikal (perilaku default Streamlit di layar sempit). */
@@ -530,10 +533,18 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
 MAP_TOOLTIP = JsCode(
     """
 function(params) {
+    function formatID(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return '-';
+        const decimals = Math.abs(n - Math.round(n)) < 1e-9 ? 0 : 2;
+        const sign = n < 0 ? '-' : '';
+        const parts = Math.abs(n).toFixed(decimals).split('.');
+        return sign + parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + (decimals ? ',' + parts[1] : '');
+    }
     if (!params.data) return '<b>' + params.name + '</b><br/>Data Tidak Tersedia';
-    let pddk = params.data.pddk !== undefined ? Number(params.data.pddk).toLocaleString('id-ID') : '-';
-    let tpt = params.data.tpt !== undefined ? params.data.tpt : '-';
-    let miskin = params.data.miskin !== undefined ? params.data.miskin : '-';
+    let pddk = params.data.pddk !== undefined ? formatID(params.data.pddk) : '-';
+    let tpt = params.data.tpt !== undefined ? formatID(params.data.tpt) : '-';
+    let miskin = params.data.miskin !== undefined ? formatID(params.data.miskin) : '-';
     return '<div style="padding:6px 2px;"><b>' + params.name + '</b><br/>' +
            '<hr style="margin:5px 0; border-top:1px solid rgba(255,255,255,0.2);"/>' +
            '\u2022 Jml Pddk: <b>' + pddk + ' Jiwa</b><br/>' +
@@ -546,12 +557,20 @@ function(params) {
 FMT_ID = JsCode(
     """
 function(params) {
+    function formatID(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return '-';
+        const decimals = Math.abs(n - Math.round(n)) < 1e-9 ? 0 : 2;
+        const sign = n < 0 ? '-' : '';
+        const parts = Math.abs(n).toFixed(decimals).split('.');
+        return sign + parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + (decimals ? ',' + parts[1] : '');
+    }
     if (Array.isArray(params)) {
         let res = '<b>' + params[0].name + '</b>';
-        for (let i = 0; i < params.length; i++) { res += '<br/>' + params[i].marker + params[i].seriesName + ': <b>' + Number(params[i].value).toLocaleString('id-ID') + '</b>'; }
+        for (let i = 0; i < params.length; i++) { res += '<br/>' + params[i].marker + params[i].seriesName + ': <b>' + formatID(params[i].value) + '</b>'; }
         return res;
     } else {
-        return '<b>' + params.name + '</b><br/>' + params.marker + (params.seriesName || '') + ': <b>' + Number(params.value).toLocaleString('id-ID') + '</b>';
+        return '<b>' + params.name + '</b><br/>' + params.marker + (params.seriesName || '') + ': <b>' + formatID(params.value) + '</b>';
     }
 }
 """
@@ -1070,12 +1089,15 @@ def mini_trend_panel(col, title: str, years: list, values: list, color: str, dec
             _html(f"<div style='text-align:center; font-size:1.3rem; font-weight:800; color:{color};'>{fmt_id(last_val, decimals)}{suffix}</div>")
 
 
-def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_dir: str, spark_labels: list, spark_values: list, color: str, chart_type: str = "line", favorable_when_down: bool = False):
+def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_dir: str, spark_labels: list, spark_values: list, color: str, chart_type: str = "line", favorable_when_down: bool = False, container_key: str = None):
     """Kartu KPI kecil dengan angka besar + badge delta + grafik mini di
     bawahnya - dipakai untuk kartu IHK/Inflasi (halaman Inflasi) dan
     UHH/HLS/RLS/Pengeluaran (halaman IPM)."""
     with col:
-        with st.container(border=True):
+        container_kwargs = {"border": True}
+        if container_key:
+            container_kwargs["key"] = container_key
+        with st.container(**container_kwargs):
             panel_title(title)
             trend_html = ""
             if delta_text:
@@ -1348,8 +1370,9 @@ if kategori == "Dashboard Utama":
                             "trigger": "item",
                             "confine": True,
                             "formatter": JsCode(
-                                "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
-                                "return '<b>'+p.name+'</b><br/>Jumlah Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
+                                "function(p){function f(v){let n=Number(v),q=Math.abs(n).toFixed(0);return(n<0?'-':'')+q.replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');}"
+                                "if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
+                                "return '<b>'+p.name+'</b><br/>Jumlah Penduduk: <b>'+f(p.data.pddk)+' jiwa</b>';}"
                             )
                         },
                         # Komponen penanggung jawab gradasi warna (Choropleth Visual Map)
@@ -1361,7 +1384,7 @@ if kategori == "Dashboard Utama":
                             "bottom": "0%",
                             "inRange": {"color": gradasi_warna},
                                 "textStyle": {"color": "#9CA3AF" if tema_gelap else "#4B5563"},
-                            "formatter": JsCode("function(value){ return Number(value).toLocaleString('id-ID'); }"),
+                            "formatter": JsCode("function(value){let n=Number(value),p=Math.abs(n).toFixed(0);return(n<0?'-':'')+p.replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');}"),
                             "itemWidth": 12,
                             "itemHeight": 90
                         },
@@ -1485,8 +1508,9 @@ elif sub_kategori == "Kependudukan":
                                 map_opts = {
                                     "backgroundColor": "transparent",
                                     "tooltip": {"trigger": "item", "confine": True, "formatter": JsCode(
-                                        "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
-                                        "return '<b>'+p.name+'</b><br/>Kepadatan: <b>'+Number(p.value).toLocaleString('id-ID')+' jiwa/km\u00b2</b><br/>Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
+                                        "function(p){function f(v){let n=Number(v),q=Math.abs(n).toFixed(0);return(n<0?'-':'')+q.replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');}"
+                                        "if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
+                                        "return '<b>'+p.name+'</b><br/>Kepadatan: <b>'+f(p.value)+' jiwa/km\u00b2</b><br/>Penduduk: <b>'+f(p.data.pddk)+' jiwa</b>';}"
                                     )},
                                     "visualMap": {"show": True, "min": vmin, "max": vmax, "left": "left", "bottom": "0%", "inRange": {"color": ["#FEF3C7", PRIMARY]}, "textStyle": {"color": "#888"}, "itemWidth": 10, "itemHeight": 70},
                                     "series": [{
@@ -1722,7 +1746,7 @@ elif sub_kategori == "IPM":
         else:
             years_i = df_i["tahun"].astype(int).tolist()
             df_i_valid = df_i.dropna(subset=["ipm"])
-            c_hero, c_uhh, c_hls, c_rls, c_peng = st.columns([1.4, 1, 1, 1, 1])
+            c_hero, c_uhh, c_hls, c_rls, c_peng = st.columns(5)
             if not df_i_valid.empty:
                 last_i = df_i_valid.iloc[-1]
                 prev_i = df_i_valid.iloc[-2] if len(df_i_valid) > 1 else None
@@ -1733,10 +1757,10 @@ elif sub_kategori == "IPM":
                         prev_i["tahun"] if prev_i is not None else np.nan,
                     )
 
-            sparkline_kpi_card(c_uhh, "Usia Harapan Hidup (UHH)", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0])
-            sparkline_kpi_card(c_hls, "Harapan Lama Sekolah (HLS)", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0])
-            sparkline_kpi_card(c_rls, "Rata-rata Lama Sekolah (RLS)", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0])
-            sparkline_kpi_card(c_peng, "Pengeluaran/Kapita Disesuaikan", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0])
+            sparkline_kpi_card(c_uhh, "Usia Harapan Hidup (UHH)", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0], container_key="ipm_kpi_uhh")
+            sparkline_kpi_card(c_hls, "Harapan Lama Sekolah (HLS)", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0], container_key="ipm_kpi_hls")
+            sparkline_kpi_card(c_rls, "Rata-rata Lama Sekolah (RLS)", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0], container_key="ipm_kpi_rls")
+            sparkline_kpi_card(c_peng, "Pengeluaran/Kapita Disesuaikan", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0], container_key="ipm_kpi_peng")
 
             if not df_i_valid.empty:
                 gap = last_i["ipm"] - last_i["ipm_kalsel"] if pd.notna(last_i.get("ipm_kalsel")) else None
