@@ -223,13 +223,22 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .donut-center .dc-value {{ font-size: 1.5rem; font-weight: 800; color: {PRIMARY}; }}
 
 /* ---- Kartu hero IPM (lebih besar dari metric-card biasa, sesuai desain) ---- */
-.ipm-hero {{ box-sizing: border-box; min-height: 226px; background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
+.ipm-hero {{ box-sizing: border-box; min-height: 226px; overflow: hidden; background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
 div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ min-height: 226px; box-sizing: border-box; }}
 .ipm-hero-label {{ font-size: 0.85rem; font-weight: 700; color: {text_muted}; text-transform: uppercase; letter-spacing: 0.4px; }}
 .ipm-hero-row {{ display: flex; align-items: baseline; gap: 12px; margin-top: 8px; }}
 .ipm-hero-value {{ font-size: 2.4rem; font-weight: 900; color: {text}; }}
 .ipm-hero-badge {{ font-size: 0.85rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; background-color: {surface}; }}
 .ipm-hero-sub {{ font-size: 0.78rem; color: {text_muted}; margin-top: 6px; }}
+
+/* Deretan lima indikator IPM: tetap seragam dan tidak saling menimpa pada
+   layar laptop/zoom besar. Judul boleh melipat, angka utama tidak boleh keluar kartu. */
+@media (max-width: 1350px) {{
+    .ipm-hero {{ padding: 18px; }}
+    .ipm-hero-row {{ flex-wrap: wrap; gap: 7px; }}
+    .ipm-hero-value {{ font-size: clamp(1.8rem, 3.2vw, 2.2rem); white-space: nowrap; }}
+    div[class*="st-key-ipm-kpi_"] .panel-title {{ font-size: 0.92rem; line-height: 1.45; min-height: 4.35em; overflow-wrap: anywhere; }}
+}}
 
 /* ---- Tabel kustom ---- */
 .table-scroll {{ width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-shadow: {shadow}; margin: 10px 0; }}
@@ -572,6 +581,34 @@ function(params) {
     } else {
         return '<b>' + params.name + '</b><br/>' + params.marker + (params.seriesName || '') + ': <b>' + formatID(params.value) + '</b>';
     }
+}
+"""
+)
+
+# Formatter sumbu ECharts: tidak bergantung pada locale browser, sehingga
+# ribuan selalu memakai titik dan pecahan memakai koma di semua grafik.
+FMT_AXIS_ID = JsCode(
+    """
+function(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '-';
+    const decimals = Math.abs(n - Math.round(n)) < 1e-9 ? 0 : 2;
+    const sign = n < 0 ? '-' : '';
+    const parts = Math.abs(n).toFixed(decimals).split('.');
+    return sign + parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + (decimals ? ',' + parts[1] : '');
+}
+"""
+)
+
+FMT_AXIS_PERCENT_ID = JsCode(
+    """
+function(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '-';
+    const decimals = Math.abs(n - Math.round(n)) < 1e-9 ? 0 : 2;
+    const sign = n < 0 ? '-' : '';
+    const parts = Math.abs(n).toFixed(decimals).split('.');
+    return sign + parts[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + (decimals ? ',' + parts[1] : '') + '%';
 }
 """
 )
@@ -1459,7 +1496,7 @@ elif sub_kategori == "Kependudukan":
                             "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                             "legend": {"bottom": 0},
                             "xAxis": {"type": "category", "data": [str(y) for y in years_k]},
-                            "yAxis": [{"type": "value", "name": "Jiwa"}, {"type": "value", "name": "%", "splitLine": {"show": False}}],
+                            "yAxis": [{"type": "value", "name": "Jiwa", "axisLabel": {"formatter": FMT_AXIS_ID}}, {"type": "value", "name": "%", "splitLine": {"show": False}, "axisLabel": {"formatter": FMT_AXIS_PERCENT_ID}}],
                             "series": [
                                 {"name": "Jumlah Penduduk", "type": "line", "data": df_target["jumlah_penduduk"].tolist(), "smooth": True, "areaStyle": {"opacity": 0.15}, "itemStyle": {"color": COLORS[0]}, "lineStyle": {"width": 3}, "symbolSize": 8},
                                 {"name": "Pertumbuhan Penduduk", "type": "line", "yAxisIndex": 1, "data": df_target["pertumbuhan"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[1]}, "lineStyle": {"width": 2}},
@@ -1542,7 +1579,7 @@ elif sub_kategori == "Kependudukan":
                             "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                             "legend": {"bottom": 0},
                             "xAxis": {"type": "category", "data": [str(y) for y in years_k]},
-                            "yAxis": {"type": "value"},
+                            "yAxis": {"type": "value", "axisLabel": {"formatter": FMT_AXIS_ID}},
                             "series": [
                                 {"name": "Laki-laki", "type": "bar", "data": df_target["lk"].tolist(), "itemStyle": {"color": COLORS[0], "borderRadius": [3, 3, 0, 0]}},
                                 {"name": "Perempuan", "type": "bar", "data": df_target["pr"].tolist(), "itemStyle": {"color": COLORS[3], "borderRadius": [3, 3, 0, 0]}},
@@ -1583,7 +1620,7 @@ elif sub_kategori == "Tenaga Kerja":
                         "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                         "legend": {"bottom": 0},
                         "xAxis": {"type": "category", "data": [str(y) for y in years_tk]},
-                        "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
+                        "yAxis": {"type": "value", "axisLabel": {"formatter": FMT_AXIS_PERCENT_ID}},
                         "series": [
                             {"name": "TPT", "type": "line", "data": df_tk["tpt"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[3]}, "lineStyle": {"width": 3}, "symbolSize": 8},
                             {"name": "TPAK", "type": "bar", "data": df_tk["tpak"].round(2).tolist(), "itemStyle": {"color": COLORS[0], "borderRadius": [4, 4, 0, 0]}},
@@ -1664,7 +1701,7 @@ elif sub_kategori == "Tenaga Kerja":
                         "tooltip": {"trigger": "axis", "confine": True, "axisPointer": {"type": "shadow"}, "formatter": FMT_ID},
                         "legend": {"bottom": 0},
                         "xAxis": {"type": "category", "data": [str(y) for y in years_tk]},
-                        "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
+                        "yAxis": {"type": "value", "axisLabel": {"formatter": FMT_AXIS_PERCENT_ID}},
                         "series": stack_series,
                     }
                     st_echarts(options=stack_opts, height="280px", key="tk_stack", theme=e_theme)
@@ -1702,7 +1739,7 @@ elif sub_kategori == "Kemiskinan":
                         "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "axisPointer": {"type": "cross"}},
                         "legend": {"bottom": 0},
                         "xAxis": {"type": "category", "data": [str(y) for y in years_m]},
-                        "yAxis": [{"type": "value", "name": "Jiwa"}, {"type": "value", "name": "Rupiah", "splitLine": {"show": False}}],
+                        "yAxis": [{"type": "value", "name": "Jiwa", "axisLabel": {"formatter": FMT_AXIS_ID}}, {"type": "value", "name": "Rupiah", "splitLine": {"show": False}, "axisLabel": {"formatter": FMT_AXIS_ID}}],
                         "series": [
                             {"name": "Jumlah Miskin", "type": "bar", "data": df_k["jml_miskin"].tolist(), "itemStyle": {"color": COLORS[0], "borderRadius": [4, 4, 0, 0]}},
                             {"name": "Garis Kemiskinan", "type": "line", "yAxisIndex": 1, "data": df_k["garis_kemiskinan"].tolist(), "itemStyle": {"color": COLORS[3]}, "lineStyle": {"width": 3}},
@@ -1781,7 +1818,7 @@ elif sub_kategori == "IPM":
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                     "legend": {"bottom": 0},
                     "xAxis": {"type": "category", "data": [str(y) for y in years_i]},
-                    "yAxis": {"type": "value", "scale": True},
+                    "yAxis": {"type": "value", "scale": True, "axisLabel": {"formatter": FMT_AXIS_ID}},
                     "series": [
                         {"name": "Tanah Laut", "type": "bar", "data": df_i["ipm"].round(2).tolist(), "itemStyle": {"color": COLORS[0], "borderRadius": [4, 4, 0, 0]}},
                         {"name": "Kalimantan Selatan", "type": "line", "data": df_i["ipm_kalsel"].round(2).tolist(), "itemStyle": {"color": COLORS[1]}, "lineStyle": {"width": 3}, "symbolSize": 8},
@@ -1974,7 +2011,7 @@ elif sub_kategori == "Inflasi":
                                 opts = {
                                     "backgroundColor": "transparent", "tooltip": {"confine": True, "formatter": tooltip_js},
                                     "xAxis": {"type": "value", "name": "IHK Bulan Berjalan", "nameLocation": "middle", "nameGap": 28},
-                                    "yAxis": {"type": "value", "name": "Andil Bulan Berjalan (%)"},
+                                    "yAxis": {"type": "value", "name": "Andil Bulan Berjalan (%)", "axisLabel": {"formatter": FMT_AXIS_PERCENT_ID}},
                                     "series": [{"type": "scatter", "data": bubble_pendorong, "symbolSize": size_js, "itemStyle": {"color": COLORS[3], "opacity": 0.75}, "label": {"show": True, "formatter": "{b}", "position": "top", "fontSize": 9}}],
                                 }
                                 st_echarts(options=opts, height="380px", key="inf_bubble_pendorong", theme=e_theme)
@@ -1987,7 +2024,7 @@ elif sub_kategori == "Inflasi":
                                 opts = {
                                     "backgroundColor": "transparent", "tooltip": {"confine": True, "formatter": tooltip_js},
                                     "xAxis": {"type": "value", "name": "IHK Bulan Berjalan", "nameLocation": "middle", "nameGap": 28},
-                                    "yAxis": {"type": "value", "name": "Andil Bulan Berjalan (%)"},
+                                    "yAxis": {"type": "value", "name": "Andil Bulan Berjalan (%)", "axisLabel": {"formatter": FMT_AXIS_PERCENT_ID}},
                                     "series": [{"type": "scatter", "data": bubble_penahan, "symbolSize": size_js, "itemStyle": {"color": COLORS[0], "opacity": 0.75}, "label": {"show": True, "formatter": "{b}", "position": "top", "fontSize": 9}}],
                                 }
                                 st_echarts(options=opts, height="380px", key="inf_bubble_penahan", theme=e_theme)
@@ -2045,7 +2082,7 @@ elif sub_kategori == "Inflasi":
                                         "grid": {"top": "8%", "bottom": "20%", "left": "10%", "right": "4%", "containLabel": True},
                                         "legend": {"bottom": 0, "textStyle": {"fontSize": 10}, "itemWidth": 12, "itemHeight": 8, "itemGap": 10},
                                         "xAxis": {"type": "category", "data": periode_labels, "axisLabel": {"fontSize": 9}},
-                                        "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}"}},
+                                        "yAxis": {"type": "value", "axisLabel": {"formatter": FMT_AXIS_ID}},
                                         "series": series,
                                     }
                                     st_echarts(options=opts, height="360px", key=chart_key, theme=e_theme)
@@ -2087,7 +2124,7 @@ elif sub_kategori == "Track Record Inflasi":
                     "legend": {"bottom": 0},
                     "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
                     "xAxis": {"type": "category", "data": labels_tr, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
-                    "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
+                    "yAxis": {"type": "value", "axisLabel": {"formatter": FMT_AXIS_PERCENT_ID}},
                     "series": [
                         {"name": "m-to-m", "type": "line", "data": df_tr["inflasi_mtm"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[0]}, "lineStyle": {"width": 2}, "symbolSize": 4},
                         {"name": "y-to-d", "type": "line", "data": df_tr["inflasi_ytd"].round(2).tolist(), "smooth": True, "itemStyle": {"color": COLORS[1]}, "lineStyle": {"width": 2}, "symbolSize": 4},
@@ -2102,7 +2139,7 @@ elif sub_kategori == "Track Record Inflasi":
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "formatter": FMT_ID},
                     "grid": {"top": "8%", "bottom": "16%", "left": "6%", "right": "4%", "containLabel": True},
                     "xAxis": {"type": "category", "data": labels_tr, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
-                    "yAxis": {"type": "value", "scale": True},
+                    "yAxis": {"type": "value", "scale": True, "axisLabel": {"formatter": FMT_AXIS_ID}},
                     "series": [{"name": "IHK", "type": "line", "data": df_tr["ihk"].round(2).tolist(), "smooth": True, "areaStyle": {"opacity": 0.12}, "itemStyle": {"color": COLORS[2]}, "lineStyle": {"width": 3}, "symbolSize": 4}],
                 }
                 st_echarts(options=opts_ihk, height="340px", key="tr_ihk_line", theme=e_theme)
@@ -2155,7 +2192,7 @@ elif sub_kategori == "Track Record Inflasi":
                             "legend": {"bottom": 0, "type": "scroll", "textStyle": {"fontSize": 10}},
                             "grid": {"top": "8%", "bottom": "20%", "left": "6%", "right": "4%", "containLabel": True},
                             "xAxis": {"type": "category", "data": labels_co, "axisLabel": {"fontSize": 9, "interval": 1, "rotate": 45}},
-                            "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
+                            "yAxis": {"type": "value", "axisLabel": {"formatter": FMT_AXIS_PERCENT_ID}},
                             "series": series_co,
                         }
                         st_echarts(options=opts_co, height="420px", key="tr_coicop_line", theme=e_theme)
@@ -2174,7 +2211,7 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
                     "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "formatter": FMT_ID},
                     "legend": {"bottom": 0},
                     "xAxis": {"type": "category", "data": [str(y) for y in years_p], "name": "tahun", "nameLocation": "middle", "nameGap": 30},
-                    "yAxis": {"type": "value", "axisLabel": {"formatter": "{value}%"}},
+                    "yAxis": {"type": "value", "axisLabel": {"formatter": FMT_AXIS_PERCENT_ID}},
                     "series": [
                         {"name": "Pertumbuhan Ekonomi", "type": "line", "data": df_p["pert_eko"].round(2).tolist(), "smooth": True, "itemStyle": {"color": ACCENT}, "lineStyle": {"width": 3}, "symbolSize": 8},
                         {"name": "Pertumbuhan PDRB per Kapita", "type": "line", "data": df_p["pert_pdrb_perkapita"].round(2).tolist() if "pert_pdrb_perkapita" in df_p.columns else [], "smooth": True, "itemStyle": {"color": COLORS[2]}, "lineStyle": {"width": 3}, "symbolSize": 8},
@@ -2261,7 +2298,7 @@ elif kategori == "Pertanian":
                             "backgroundColor": "transparent", "tooltip": {"trigger": "axis", "confine": True, "axisPointer": {"type": "cross"}, "formatter": FMT_ID},
                             "legend": {"bottom": 0},
                             "xAxis": {"type": "category", "data": df_kom["tahun"].astype(str).tolist()},
-                            "yAxis": [{"type": "value", "name": "Ha", "splitLine": {"show": False}}, {"type": "value", "name": "Ton"}],
+                            "yAxis": [{"type": "value", "name": "Ha", "splitLine": {"show": False}, "axisLabel": {"formatter": FMT_AXIS_ID}}, {"type": "value", "name": "Ton", "axisLabel": {"formatter": FMT_AXIS_ID}}],
                             "series": [
                                 {"name": "Luas Panen", "type": "bar", "data": df_kom["luas_panen"].tolist(), "itemStyle": {"color": "#BFDBFE", "borderRadius": [4, 4, 0, 0]}},
                                 {"name": "Produksi", "type": "line", "yAxisIndex": 1, "data": df_kom["produksi"].tolist(), "itemStyle": {"color": COLORS[2]}, "lineStyle": {"width": 3}},
