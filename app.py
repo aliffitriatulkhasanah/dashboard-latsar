@@ -76,10 +76,10 @@ if "kepen_wilayah_pending" in st.session_state:
 SHEET_ID = st.secrets.get("SHEET_ID", "1nQh8AezWpM8TfsaknlNO922yqqBWWBfDKah4fm9tpHU")
 # Palet asli konten dashboard. Warna khusus KPI dipisahkan agar dapat mengikuti
 # desain final tanpa mengubah grafik, tabel, peta, dan elemen halaman lainnya.
-PRIMARY = "#4F46E5"
+PRIMARY = "#1F70C1"
 SECONDARY = "#7C3AED"
 ACCENT = "#F59E0B"
-COLORS = ["#4F46E5", "#F59E0B", "#10B981", "#EC4899", "#06B6D4", "#D97706"]
+COLORS = ["#1F70C1", "#F59E0B", "#10B981", "#EC4899", "#06B6D4", "#D97706"]
 KPI_ACCENTS = ["#2F80C8", "#35A85B", "#F29B25", "#42A5D8", "#20A58A", "#F0A426", "#3AA75D"]
 GEOJSON_PATH = "tanah_laut.geojson"
 LOGO_PATH = "bps.png"
