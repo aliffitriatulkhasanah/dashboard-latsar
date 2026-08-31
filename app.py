@@ -1965,10 +1965,12 @@ elif sub_kategori == "Inflasi":
                         freq_t_name, freq_t_val = max(penahan_freq.items(), key=lambda kv: kv[1])
                         insight_box(
                             "Interpretasi Komoditas Pendorong & Penahan Inflasi",
-                            f"Tekanan harga pada {bulan_aktif} terutama berasal dari {str(top_now['komoditas']).title()} dengan andil {top_now[bulan_aktif]:g}%, "
-                            f"yakni kontribusi terbesar terhadap inflasi bulan berjalan. Sebaliknya, {str(bottom_now['komoditas']).title()} memberi andil {bottom_now[bulan_aktif]:g}% "
-                            f"dan menjadi penahan inflasi utama. Dalam tahun {int(last_row['tahun'])}, {str(freq_p_name).title()} paling konsisten masuk kelompok 10 pendorong teratas "
-                            f"({freq_p_val} kali), sedangkan {str(freq_t_name).title()} paling konsisten menjadi penahan ({freq_t_val} kali). Frekuensi ini menunjukkan pola berulang, bukan besarnya dampak pada setiap bulan.",
+                            f"Pada {bulan_aktif}, kenaikan harga terbesar didorong oleh {str(top_now['komoditas']).title()} "
+                            f"dengan andil {top_now[bulan_aktif]:g}%. Di sisi lain, komoditas penahan inflasi utama adalah "
+                            f"{str(bottom_now['komoditas']).title()} dengan andil {bottom_now[bulan_aktif]:g}%. Selama tahun "
+                            f"{int(last_row['tahun'])}, komoditas yang konsisten mendorong inflasi adalah {str(freq_p_name).title()} "
+                            f"(muncul {freq_p_val}x sebagai Top 10) dan komoditas yang konsisten menahan inflasi adalah "
+                            f"{str(freq_t_name).title()} (muncul {freq_t_val}x sebagai Top 10).",
                         )
 
                 df_harga = apply_filter(get_df("Harga"), (2026, 2026))
