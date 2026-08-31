@@ -74,13 +74,13 @@ if "kepen_wilayah_pending" in st.session_state:
     st.session_state["kepen_wilayah"] = st.session_state.pop("kepen_wilayah_pending")
 
 SHEET_ID = st.secrets.get("SHEET_ID", "1nQh8AezWpM8TfsaknlNO922yqqBWWBfDKah4fm9tpHU")
-# Palet BPS: biru sebagai fondasi, oranye sebagai penarik perhatian, dan hijau
-# untuk pertumbuhan/kemajuan. Turunannya dipakai agar visual kaya tetapi tidak ramai.
-PRIMARY = "#1F70C1"      # biru BPS
-SECONDARY = "#159B7A"    # hijau-teal BPS
-ACCENT = "#F7941D"       # oranye BPS
-COLORS = ["#1F70C1", "#F7941D", "#35A853", "#42A5D8", "#F6B328", "#159B7A"]
-CARD_ACCENTS = ["#1F70C1", "#35A853", "#F7941D", "#42A5D8", "#159B7A", "#F6B328", "#2F9E44"]
+# Palet "cerah-terkendali": warna cukup berbeda untuk membedakan indikator,
+# tetapi memakai saturasi menengah agar nyaman dipandang dalam waktu lama.
+PRIMARY = "#3B5BDB"      # biru indigo: identitas utama dan elemen navigasi
+SECONDARY = "#845EF7"    # ungu lembut: aksen pendamping
+ACCENT = "#F59F00"       # kuning keemasan: sorotan dan interaksi
+COLORS = ["#3B5BDB", "#F59F00", "#12B886", "#E8597A", "#228BE6", "#845EF7"]
+CARD_ACCENTS = ["#3B5BDB", "#E8597A", "#F59F00", "#12B886", "#228BE6", "#845EF7", "#7950F2"]
 GEOJSON_PATH = "tanah_laut.geojson"
 LOGO_PATH = "bps.png"
 
@@ -145,7 +145,7 @@ def _html(*parts: str) -> str:
 # 3. CSS / TEMA
 # ==============================================================================
 def inject_css(dark: bool):
-    bg = "#0B1120" if dark else "#FFFFFF"
+    bg = "#0B1120" if dark else "#F6F8FF"
     surface = "#161B29" if dark else "#FFFFFF"
     sidebar_bg = "#111827" if dark else "#FFFFFF"
     text = "#E5E7EB" if dark else "#1F2937"
@@ -164,7 +164,7 @@ html, body, [class*="css"] {{ font-family: 'Inter', -apple-system, sans-serif !i
 #MainMenu, footer {{visibility: hidden;}}
 [data-testid="stHeader"] {{background-color: transparent !important;}}
 .block-container {{padding-top: 1.2rem !important; padding-bottom: 3rem !important; max-width: 97% !important;}}
-.stApp {{ background-color: {bg} !important; background-image: {"radial-gradient(circle at 3% 3%, rgba(31,112,193,0.17), transparent 27%), radial-gradient(circle at 98% 2%, rgba(247,148,29,0.13), transparent 23%), radial-gradient(circle at 80% 94%, rgba(53,168,83,0.11), transparent 25%)" if dark else "none"} !important; }}
+.stApp {{ background-color: {bg} !important; background-image: {"radial-gradient(circle at 3% 3%, rgba(132,94,247,0.14), transparent 26%), radial-gradient(circle at 98% 2%, rgba(245,159,0,0.11), transparent 22%)" if dark else "radial-gradient(circle at 3% 3%, rgba(132,94,247,0.09), transparent 26%), radial-gradient(circle at 98% 2%, rgba(245,159,0,0.10), transparent 22%), radial-gradient(circle at 78% 94%, rgba(18,184,134,0.07), transparent 24%)"} !important; }}
 [data-testid="stSidebar"] {{ background-color: {sidebar_bg} !important; border-right: 1px solid {border}; }}
 [data-testid="stSidebar"] .block-container {{ padding-top: 1.5rem !important; }}
 h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
@@ -173,13 +173,13 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 /* ---- Header halaman: judul italic serif polos (sesuai prototype - tanpa
    hero gradient/breadcrumb, cukup judul besar + subjudul kecil di bawahnya) ---- */
 .page-title {{ font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 700;
-    font-size: 3rem !important; color: {text}; margin: 0 0 4px 0; line-height: 1.2; text-decoration: underline; text-decoration-color: rgba(247,148,29,0.68); text-decoration-thickness: 5px; text-underline-offset: 8px; }}
+    font-size: 3rem !important; color: {text}; margin: 0 0 4px 0; line-height: 1.2; text-decoration: underline; text-decoration-color: rgba(245,159,0,0.65); text-decoration-thickness: 5px; text-underline-offset: 8px; }}
 .page-subtitle {{ font-size: 0.95rem; color: {text_muted}; margin-bottom: 22px; }}
 .page-header-wrap {{ margin-bottom: 24px; }}
 
 /* ---- Kartu metrik (varian solid - dipakai di dalam halaman detail) ---- */
-.metric-card {{ background: linear-gradient(145deg, {surface} 0%, {surface} 74%, {"#1B2435" if dark else "#F8FBFE"} 100%); border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 16px 14px 16px; min-height: 96px; box-shadow: {shadow}; display: flex; flex-direction: column; justify-content: flex-start; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
-.metric-card:hover {{ transform: translateY(-3px); box-shadow: {"0 8px 20px rgba(0,0,0,0.28)" if dark else "0 8px 20px rgba(31,112,193,0.14)"}; }}
+.metric-card {{ background: linear-gradient(145deg, {surface} 0%, {surface} 74%, {"#1B2435" if dark else "#F4F7FF"} 100%); border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 16px 14px 16px; min-height: 96px; box-shadow: {shadow}; display: flex; flex-direction: column; justify-content: flex-start; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
+.metric-card:hover {{ transform: translateY(-3px); box-shadow: {"0 8px 20px rgba(0,0,0,0.28)" if dark else "0 8px 20px rgba(59,91,219,0.13)"}; }}
 .metric-card .m-top {{ display:flex; align-items:center; gap:8px; }}
 .metric-card .m-icon {{ font-size: 1.1rem; }}
 .metric-card .m-label {{ font-size: 0.74rem; font-weight: 700; color: {text_muted}; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.4px; }}
@@ -187,17 +187,15 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .metric-card .m-trend {{ font-size: 0.76rem; font-weight: 700; }}
 
 /* ---- Kartu metrik varian OUTLINE (khusus landing page "Dashboard Utama" ---- */
-.metric-card-outline {{ position: relative; isolation: isolate; overflow: hidden; background: linear-gradient(145deg, var(--card-tint) 0%, {surface} 72%); border: 2px solid var(--card-accent); border-radius: 14px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
-.metric-card-outline::after {{ content: ''; position: absolute; z-index: 0; width: 72px; height: 72px; right: -26px; top: -26px; border-radius: 50%; background: var(--card-accent); opacity: 0.12; }}
-.metric-card-outline .mo-label, .metric-card-outline .mo-value, .metric-card-outline .mo-trend {{ position: relative; z-index: 1; }}
-.metric-card-outline:hover {{ transform: translateY(-3px); box-shadow: {"0 9px 20px rgba(0,0,0,0.25)" if dark else "0 9px 20px rgba(31,112,193,0.14)"}; }}
+.metric-card-outline {{ background: linear-gradient(145deg, var(--card-tint) 0%, {surface} 72%); border: 2px solid var(--card-accent); border-radius: 14px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
+.metric-card-outline:hover {{ transform: translateY(-3px); box-shadow: {"0 9px 20px rgba(0,0,0,0.25)" if dark else "0 9px 20px rgba(59,91,219,0.14)"}; }}
 .metric-card-outline .mo-label {{ font-size: 0.78rem; font-weight: 700; color: {text}; }}
 .metric-card-outline .mo-value {{ font-size: 1.5rem; font-weight: 800; color: {text}; }}
 .metric-card-outline .mo-trend {{ font-size: 0.76rem; font-weight: 700; }}
-.m-up {{ color: #2F9E44; }} .m-down {{ color: #E9771C; }} .m-flat {{ color: {text_muted}; }}
+.m-up {{ color: #10B981; }} .m-down {{ color: #EF4444; }} .m-flat {{ color: {text_muted}; }}
 
 /* ---- Kotak interpretasi otomatis ---- */
-.insight-box {{ background: linear-gradient(105deg, {"rgba(247,148,29,0.12)" if dark else "#FFF7EB"} 0%, {surface} 58%); border: 1px solid {"rgba(247,148,29,0.28)" if dark else "rgba(247,148,29,0.34)"}; border-left: 4px solid {ACCENT}; padding: 14px 18px; border-radius: 10px; margin: 6px 0 22px 0; box-shadow: {shadow}; }}
+.insight-box {{ background: linear-gradient(105deg, {"rgba(245,159,0,0.12)" if dark else "#FFF9E8"} 0%, {surface} 58%); border: 1px solid {"rgba(245,159,0,0.28)" if dark else "rgba(245,159,0,0.34)"}; border-left: 4px solid {ACCENT}; padding: 14px 18px; border-radius: 10px; margin: 6px 0 22px 0; box-shadow: {shadow}; }}
 .insight-title {{ font-weight: 800; margin-bottom: 3px; font-size: 0.88rem; color: {text}; }}
 .insight-text {{ font-size: 0.88rem; color: {text_muted}; line-height: 1.5; }}
 
@@ -213,20 +211,19 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .pdf-badge:hover {{ background-color: {"#4B5563" if dark else "#D1D5DB"}; }}
 
 /* ---- Panel section (pembungkus chart) ---- */
-.panel-title {{ display: flex; align-items: center; gap: 9px; font-size: 1.02rem; font-weight: 700; color: {text}; margin-bottom: 2px; }}
-.panel-title::before {{ content: ''; display: inline-block; flex: 0 0 5px; height: 22px; border-radius: 999px; background: linear-gradient(to bottom, {PRIMARY} 0 33%, {ACCENT} 33% 66%, {SECONDARY} 66% 100%); }}
+.panel-title {{ font-size: 1.02rem; font-weight: 700; color: {text}; margin-bottom: 2px; }}
 .panel-sub {{ font-size: 0.8rem; color: {text_muted}; margin-bottom: 10px; }}
 [data-testid="stVerticalBlockBorderWrapper"] {{ border-radius: 12px !important; border-color: {border} !important; background: linear-gradient(145deg, {surface}, {"#182235" if dark else "#FBFCFF"}) !important; box-shadow: {shadow}; }}
 
 /* ---- Chip badge (mis. "Kecamatan: Panyipatan" yang aktif akibat drill-down) ---- */
-.chip {{ display:inline-block; background: linear-gradient(90deg, #E8F4FC, #FFF5E5, #E7F6EB); border: 1.5px solid {PRIMARY}; color: {PRIMARY}; font-weight: 700; font-size: 0.85rem; padding: 6px 16px; border-radius: 999px; margin-bottom: 14px; }}
+.chip {{ display:inline-block; background-color: {surface}; border: 1.5px solid {PRIMARY}; color: {PRIMARY}; font-weight: 700; font-size: 0.85rem; padding: 6px 16px; border-radius: 999px; margin-bottom: 14px; }}
 
 .donut-center {{ text-align:center; }}
 .donut-center .dc-label {{ font-size: 0.8rem; color: {text_muted}; font-weight: 600; }}
 .donut-center .dc-value {{ font-size: 1.5rem; font-weight: 800; color: {PRIMARY}; }}
 
 /* ---- Kartu hero IPM (lebih besar dari metric-card biasa, sesuai desain) ---- */
-.ipm-hero {{ background: linear-gradient(135deg, {"#16314A" if dark else "#E8F4FC"} 0%, {"#173D36" if dark else "#E5F5EA"} 100%); border: 1px solid {"rgba(66,165,216,0.28)" if dark else "#BFE4F7"}; border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
+.ipm-hero {{ background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
 .ipm-hero-label {{ font-size: 0.85rem; font-weight: 700; color: {text_muted}; text-transform: uppercase; letter-spacing: 0.4px; }}
 .ipm-hero-row {{ display: flex; align-items: baseline; gap: 12px; margin-top: 8px; }}
 .ipm-hero-value {{ font-size: 2.4rem; font-weight: 900; color: {text}; }}
@@ -243,14 +240,14 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .custom-table tbody tr:nth-of-type(even) {{ background-color: {stripe}; }}
 .custom-table tbody tr:last-of-type {{ border-bottom: 2px solid {PRIMARY}; }}
 div[data-testid="column"] .stButton > button {{ padding: 0.25rem 0.6rem; font-size: 0.82rem; }}
-.data-error {{ background-color: rgba(247,148,29,0.10); border: 1px solid rgba(247,148,29,0.30); border-left: 4px solid {ACCENT}; padding: 12px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 0.86rem; }}
-.data-info {{ background-color: rgba(31,112,193,0.08); border: 1px solid rgba(31,112,193,0.22); border-left: 4px solid {PRIMARY}; padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; }}
+.data-error {{ background-color: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-left: 4px solid #EF4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 0.86rem; }}
+.data-info {{ background-color: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); border-left: 4px solid {PRIMARY}; padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; }}
 .footer-note {{ text-align:center; opacity:0.55; font-size:0.76rem; margin-top:36px; color: {text_muted}; }}
 
 /* ---- Sidebar polish ---- */
 section[data-testid="stSidebar"] .stSelectbox label, section[data-testid="stSidebar"] .stSlider label {{ font-weight: 700; font-size: 0.82rem; }}
 .sidebar-brand {{ text-align:center; padding: 4px 0 14px 0; }}
-.logo-badge {{ width: 60px; height: 60px; margin: 0 auto; border-radius: 16px; background: linear-gradient(135deg, {PRIMARY} 0%, {ACCENT} 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(31,112,193,0.30); }}
+.logo-badge {{ width: 60px; height: 60px; margin: 0 auto; border-radius: 16px; background: linear-gradient(135deg, {PRIMARY} 0%, {SECONDARY} 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(79,70,229,0.35); }}
 .logo-img {{ width: 64px; height: 64px; object-fit: contain; background: #FFFFFF; border-radius: 50%; padding: 8px; box-shadow: 0 6px 16px rgba(30,64,175,0.2); display: block; margin: 0 auto; }}
 .logo-caption {{ font-size: 0.86rem; font-weight: 700; color: {text}; margin-top: 8px; }}
 .sidebar-caption {{ text-align:center; font-size:0.78rem; color:{text_muted}; margin-top:4px; }}
@@ -289,11 +286,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 /* ---- Tabel varian header berwarna (dipakai untuk tabel NTP / PDRB di
    halaman Pertanian & Pertumbuhan Ekonomi, sesuai skema warna prototype) ---- */
-.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #F6B328; }}
+.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #F5C518; }}
 .table-scroll.tbl-yellow .custom-table thead th {{ color: #1F2937 !important; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #CDEED8; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #E8F7ED; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #FCE3B4; font-weight: 700; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #B7E4C7; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #D9F2E3; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #F5C518; font-weight: 700; }}
 /* Latar sel di atas SELALU pastel terang (fixed, tidak ikut tema) - jadi
    warna teksnya juga WAJIB dipaksa gelap terus-menerus, supaya di mode
    gelap teksnya tidak ikut jadi putih/abu-abu terang (tak terbaca di atas
@@ -303,11 +300,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 .pdrb-table {{ width: 100%; border-collapse: collapse; font-size: 0.88em; text-align: center; }}
 .pdrb-table th, .pdrb-table td {{ padding: 9px 12px; border: 1px solid {border}; }}
-.pdrb-table thead th.grp-tahun {{ background-color: #BFE7CE; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-nilai {{ background-color: #BFE4F7; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-perkap {{ background-color: #FCE0B3; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-tahun {{ background-color: #E7F6EB; color: #1F2937 !important; font-weight: 700; }}
-.pdrb-table tbody td.col-nilai {{ background-color: #E6F4FC; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-tahun {{ background-color: #F5C518; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-nilai {{ background-color: #A9D6F5; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-perkap {{ background-color: #F5B8DA; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-tahun {{ background-color: #FBD1E7; color: #1F2937 !important; font-weight: 700; }}
+.pdrb-table tbody td.col-nilai {{ background-color: #D6EBFB; color: #1F2937 !important; }}
 .pdrb-table tbody td.col-perkap {{ background-color: {surface}; color: {text}; }}
 
 /* ---- Heatmap gender (IPM) ---- */
@@ -969,7 +966,7 @@ def render_gender_heatmap(years: list, ipg: list, idg: list, ikg: list):
     """Tabel heatmap Indeks-Indeks Gender (baris: IPG/IDG/IKG, kolom: tahun) -
     warna sel dari terang ke gelap sesuai proporsi nilai per baris, sesuai
     prototype (Image 4)."""
-    def _row(label, values, color, low_is_good=False):
+    def _row(label, values, low_is_good=False):
         valid = [v for v in values if pd.notna(v)]
         vmin, vmax = (min(valid), max(valid)) if valid else (0, 1)
         rng = (vmax - vmin) or 1
@@ -983,11 +980,11 @@ def render_gender_heatmap(years: list, ipg: list, idg: list, ikg: list):
                 frac = 1 - frac
             alpha = 0.15 + 0.65 * frac
             txt_color = "#FFFFFF" if frac > 0.6 else "inherit"
-            cells += f"<td style='background-color: {_hex_rgba(color, alpha)}; color:{txt_color};'>{fmt_id(v, 2 if label != 'IKG' else 3)}</td>"
+            cells += f"<td style='background-color: rgba(79,134,198,{alpha:.2f}); color:{txt_color};'>{fmt_id(v, 2 if label != 'IKG' else 3)}</td>"
         return f"<tr>{cells}</tr>"
 
     thead = "<th></th>" + "".join(f"<th>{int(y)}</th>" for y in years)
-    body = _row("IPG", ipg, PRIMARY) + _row("IDG", idg, SECONDARY) + _row("IKG", ikg, ACCENT, low_is_good=True)
+    body = _row("IPG", ipg) + _row("IDG", idg) + _row("IKG", ikg, low_is_good=True)
     _html(f"<div class='table-scroll'><table class='gender-heat-table'><thead><tr>{thead}</tr></thead><tbody>{body}</tbody></table></div>")
 
 
@@ -1323,9 +1320,9 @@ if kategori == "Dashboard Utama":
                     vmax = max(pddk_vals) if pddk_vals else 100000
 
                     # Penyesuaian batas wilayah & gradasi warna (Terang -> Gelap)
-                    map_border = "#2B6EA6" if tema_gelap else "#70B7DD"
+                    map_border = "#607456" if tema_gelap else "#64748B"
                     # Warna gradasi: Terang (penduduk sedikit) ke Gelap (penduduk banyak)
-                    gradasi_warna = ["#284F70", "#1F70C1", "#159B7A"] if tema_gelap else ["#FFF2DC", "#BFE4F7", "#9BD9B0", "#1F70C1"]
+                    gradasi_warna = ["#E8DFCA", "#CFAB8D", "#B87C4C"] if tema_gelap else ["#F7E49B", "#86BCBD", "#A4CE8B", "#BA5A5A"]
 
                     map_opts = {
                         "backgroundColor": "transparent",
@@ -1345,7 +1342,7 @@ if kategori == "Dashboard Utama":
                             "left": "left",
                             "bottom": "0%",
                             "inRange": {"color": gradasi_warna},
-                                "textStyle": {"color": "#9CA3AF" if tema_gelap else "#356A8C"},
+                            "textStyle": {"color": "#9CA3AF" if tema_gelap else "#4B5563"},
                             "formatter": JsCode("function(value){ return Number(value).toLocaleString('id-ID'); }"),
                             "itemWidth": 12,
                             "itemHeight": 90
@@ -1466,14 +1463,14 @@ elif sub_kategori == "Kependudukan":
                             if map_data:
                                 vmin = min(d["value"] for d in map_data)
                                 vmax = max(d["value"] for d in map_data)
-                                map_border_dens = "#1F2937" if tema_gelap else "#5FA8D3"
+                                map_border_dens = "#1F2937" if tema_gelap else "#6B5B45"
                                 map_opts = {
                                     "backgroundColor": "transparent",
                                     "tooltip": {"trigger": "item", "confine": True, "formatter": JsCode(
                                         "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
                                         "return '<b>'+p.name+'</b><br/>Kepadatan: <b>'+Number(p.value).toLocaleString('id-ID')+' jiwa/km\u00b2</b><br/>Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
                                     )},
-                                    "visualMap": {"show": True, "min": vmin, "max": vmax, "left": "left", "bottom": "0%", "inRange": {"color": ["#E7F4FC", "#9BD9B0", PRIMARY]}, "textStyle": {"color": "#356A8C"}, "itemWidth": 10, "itemHeight": 70},
+                                    "visualMap": {"show": True, "min": vmin, "max": vmax, "left": "left", "bottom": "0%", "inRange": {"color": ["#FEF3C7", PRIMARY]}, "textStyle": {"color": "#888"}, "itemWidth": 10, "itemHeight": 70},
                                     "series": [{
                                         "type": "map", "map": "TALA", "roam": False, "label": {"show": False},
                                         "itemStyle": {"borderColor": map_border_dens, "borderWidth": 1.5},
@@ -1590,7 +1587,7 @@ elif sub_kategori == "Tenaga Kerja":
                             "type": "pie", "radius": ["55%", "75%"], "avoidLabelOverlap": True, "label": {"show": False},
                             "data": [
                                 {"name": donut_labels[0], "value": round(tpak_val, 2), "itemStyle": {"color": COLORS[0]}},
-                                {"name": donut_labels[1], "value": round(100 - tpak_val, 2), "itemStyle": {"color": "#FCE0B3"}},
+                                {"name": donut_labels[1], "value": round(100 - tpak_val, 2), "itemStyle": {"color": "#CBD5E1"}},
                             ],
                         }],
                     }
@@ -2225,7 +2222,7 @@ elif kategori == "Pertanian":
                             "xAxis": {"type": "category", "data": df_kom["tahun"].astype(str).tolist()},
                             "yAxis": [{"type": "value", "name": "Ha", "splitLine": {"show": False}}, {"type": "value", "name": "Ton"}],
                             "series": [
-                                {"name": "Luas Panen", "type": "bar", "data": df_kom["luas_panen"].tolist(), "itemStyle": {"color": "#BFE4F7", "borderRadius": [4, 4, 0, 0]}},
+                                {"name": "Luas Panen", "type": "bar", "data": df_kom["luas_panen"].tolist(), "itemStyle": {"color": "#BFDBFE", "borderRadius": [4, 4, 0, 0]}},
                                 {"name": "Produksi", "type": "line", "yAxisIndex": 1, "data": df_kom["produksi"].tolist(), "itemStyle": {"color": COLORS[2]}, "lineStyle": {"width": 3}},
                             ],
                         }
