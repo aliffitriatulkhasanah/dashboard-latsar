@@ -9,7 +9,7 @@ Inflasi, Pertumbuhan Ekonomi, Pertanian) dan struktur database Excel baru
 CSS, helper komponen (_html, page_header, metric_card, insight_box, panel_title,
 render_custom_table+pagination, section_guard, dst) di-reuse dari versi
 sebelumnya karena sudah teruji lewat banyak putaran perbaikan (bug rendering
-HTML, dark/light mode, responsivitas, dsb) - lihat komentar di masing-masing
+HTML, dark/light mode, responsivitas, dll) - lihat komentar di masing-masing
 fungsi untuk detail kenapa ditulis seperti itu.
 
 Patch (Agustus 2026): get_komoditas() dibuat mendeteksi baris header nama
