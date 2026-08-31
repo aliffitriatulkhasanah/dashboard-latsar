@@ -344,6 +344,15 @@ div[data-baseweb="popover"] {{ border: 1px solid {border} !important; }}
 .stButton > button, .stDownloadButton > button {{ background-color: {surface} !important; color: {text} !important; border: 1px solid {border} !important; box-shadow: {shadow}; }}
 .stButton > button:hover, .stDownloadButton > button:hover {{ border-color: {PRIMARY} !important; }}
 .stButton > button p, .stDownloadButton > button p {{ color: inherit !important; }}
+/* Streamlit membungkus label tombol dalam <p>/<span>; warna harus dipaksa
+   sampai ke elemen terdalam agar tetap kontras di atas gradasi tombol aktif. */
+div[class*="st-key-subnav_"] .stButton > button[kind="primary"],
+div[class*="st-key-subnav_"] .stButton > button[kind="primary"] p,
+div[class*="st-key-subnav_"] .stButton > button[kind="primary"] span {{
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 1px rgba(17,24,39,0.18);
+}}
 div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSlider"] [data-testid="stTickBarMax"] {{ color: {text_muted} !important; }}
 .stRadio label p, .stRadio div[role="radiogroup"] label {{ color: {text} !important; }}
 [data-testid="stWidgetLabel"] p {{ color: {text} !important; }}
