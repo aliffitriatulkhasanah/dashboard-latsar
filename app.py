@@ -223,8 +223,8 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .donut-center .dc-value {{ font-size: 1.5rem; font-weight: 800; color: {PRIMARY}; }}
 
 /* ---- Kartu hero IPM (lebih besar dari metric-card biasa, sesuai desain) ---- */
-.ipm-hero {{ box-sizing: border-box; min-height: 226px; overflow: hidden; background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
-div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ min-height: 226px; box-sizing: border-box; }}
+.ipm-hero {{ box-sizing: border-box; height: 226px; overflow: hidden; background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 18px 20px; box-shadow: {shadow}; }}
+div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ height: 226px; box-sizing: border-box; }}
 .ipm-hero-label {{ font-size: 0.85rem; font-weight: 700; color: {text_muted}; text-transform: uppercase; letter-spacing: 0.4px; }}
 .ipm-hero-row {{ display: flex; align-items: baseline; gap: 12px; margin-top: 8px; }}
 .ipm-hero-value {{ font-size: 2.4rem; font-weight: 900; color: {text}; }}
@@ -296,11 +296,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 /* ---- Tabel varian header berwarna (dipakai untuk tabel NTP / PDRB di
    halaman Pertanian & Pertumbuhan Ekonomi, sesuai skema warna prototype) ---- */
-.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #E9BE4B; }}
+.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #E2B75A; }}
 .table-scroll.tbl-yellow .custom-table thead th {{ color: #1F2937 !important; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #C2DFC9; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #E0EEE5; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #EFD174; font-weight: 700; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #C9DECC; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #E8F0E9; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #E8CB82; font-weight: 700; }}
 /* Latar sel di atas SELALU pastel terang (fixed, tidak ikut tema) - jadi
    warna teksnya juga WAJIB dipaksa gelap terus-menerus, supaya di mode
    gelap teksnya tidak ikut jadi putih/abu-abu terang (tak terbaca di atas
@@ -310,12 +310,12 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 .pdrb-table {{ width: 100%; border-collapse: collapse; font-size: 0.88em; text-align: center; }}
 .pdrb-table th, .pdrb-table td {{ padding: 9px 12px; border: 1px solid {border}; }}
-.pdrb-table thead th.grp-tahun {{ background-color: #DDC77F; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-nilai {{ background-color: #A7CCE5; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-perkap {{ background-color: #DCB5CB; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-tahun {{ background-color: #E9DDE4; color: #1F2937 !important; font-weight: 700; }}
-.pdrb-table tbody td.col-nilai {{ background-color: #CFE3F1; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-perkap {{ background-color: #F0DEE7; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-tahun {{ background-color: #E2C67B; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-nilai {{ background-color: #A8C9E1; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-perkap {{ background-color: #B9D7B9; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-tahun {{ background-color: #F5EACD; color: #1F2937 !important; font-weight: 700; }}
+.pdrb-table tbody td.col-nilai {{ background-color: #E4F0F8; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-perkap {{ background-color: #E5F1E5; color: #1F2937 !important; }}
 
 /* ---- Heatmap gender (IPM) ---- */
 .gender-heat-table {{ width: 100%; border-collapse: collapse; font-size: 0.86em; text-align: center; }}
@@ -485,8 +485,8 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     .pdf-card-icon {{ font-size: 1.5rem; }}
     .pdf-card-title {{ font-size: 0.88rem; }}
     .pdf-card-sub {{ font-size: 0.75rem; }}
-    .ipm-hero {{ min-height: 196px; padding: 16px 18px; }}
-    div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ min-height: 196px; }}
+    .ipm-hero {{ height: 196px; padding: 16px 18px; }}
+    div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ height: 196px; }}
     /* Kartu/panel di dalam st.container(border=True) diberi jarak bawah
        sedikit lebih besar supaya tidak terasa berdempetan saat kolom-kolom
        ikut stack vertikal (perilaku default Streamlit di layar sempit). */
