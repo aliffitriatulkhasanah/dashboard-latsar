@@ -74,13 +74,13 @@ if "kepen_wilayah_pending" in st.session_state:
     st.session_state["kepen_wilayah"] = st.session_state.pop("kepen_wilayah_pending")
 
 SHEET_ID = st.secrets.get("SHEET_ID", "1nQh8AezWpM8TfsaknlNO922yqqBWWBfDKah4fm9tpHU")
-# Palet "cerah-terkendali": warna cukup berbeda untuk membedakan indikator,
-# tetapi memakai saturasi menengah agar nyaman dipandang dalam waktu lama.
-PRIMARY = "#3B5BDB"      # biru indigo: identitas utama dan elemen navigasi
-SECONDARY = "#845EF7"    # ungu lembut: aksen pendamping
-ACCENT = "#F59F00"       # kuning keemasan: sorotan dan interaksi
-COLORS = ["#3B5BDB", "#F59F00", "#12B886", "#E8597A", "#228BE6", "#845EF7"]
-CARD_ACCENTS = ["#3B5BDB", "#E8597A", "#F59F00", "#12B886", "#228BE6", "#845EF7", "#7950F2"]
+# Palet BPS: biru sebagai fondasi, oranye sebagai penarik perhatian, dan hijau
+# untuk pertumbuhan/kemajuan. Turunannya dipakai agar visual kaya tetapi tidak ramai.
+PRIMARY = "#1F70C1"      # biru BPS
+SECONDARY = "#159B7A"    # hijau-teal BPS
+ACCENT = "#F7941D"       # oranye BPS
+COLORS = ["#1F70C1", "#F7941D", "#35A853", "#42A5D8", "#F6B328", "#159B7A"]
+CARD_ACCENTS = ["#1F70C1", "#35A853", "#F7941D", "#42A5D8", "#159B7A", "#F6B328", "#2F9E44"]
 GEOJSON_PATH = "tanah_laut.geojson"
 LOGO_PATH = "bps.png"
 
@@ -164,7 +164,7 @@ html, body, [class*="css"] {{ font-family: 'Inter', -apple-system, sans-serif !i
 #MainMenu, footer {{visibility: hidden;}}
 [data-testid="stHeader"] {{background-color: transparent !important;}}
 .block-container {{padding-top: 1.2rem !important; padding-bottom: 3rem !important; max-width: 97% !important;}}
-.stApp {{ background-color: {bg} !important; background-image: {"radial-gradient(circle at 3% 3%, rgba(132,94,247,0.14), transparent 26%), radial-gradient(circle at 98% 2%, rgba(245,159,0,0.11), transparent 22%)" if dark else "radial-gradient(circle at 3% 3%, rgba(132,94,247,0.09), transparent 26%), radial-gradient(circle at 98% 2%, rgba(245,159,0,0.10), transparent 22%), radial-gradient(circle at 78% 94%, rgba(18,184,134,0.07), transparent 24%)"} !important; }}
+.stApp {{ background-color: {bg} !important; background-image: {"radial-gradient(circle at 3% 3%, rgba(31,112,193,0.17), transparent 27%), radial-gradient(circle at 98% 2%, rgba(247,148,29,0.13), transparent 23%), radial-gradient(circle at 80% 94%, rgba(53,168,83,0.11), transparent 25%)" if dark else "radial-gradient(circle at 3% 3%, rgba(31,112,193,0.10), transparent 27%), radial-gradient(circle at 98% 2%, rgba(247,148,29,0.11), transparent 23%), radial-gradient(circle at 78% 94%, rgba(53,168,83,0.09), transparent 25%)"} !important; }}
 [data-testid="stSidebar"] {{ background-color: {sidebar_bg} !important; border-right: 1px solid {border}; }}
 [data-testid="stSidebar"] .block-container {{ padding-top: 1.5rem !important; }}
 h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
@@ -179,7 +179,7 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 
 /* ---- Kartu metrik (varian solid - dipakai di dalam halaman detail) ---- */
 .metric-card {{ background: linear-gradient(145deg, {surface} 0%, {surface} 74%, {"#1B2435" if dark else "#F4F7FF"} 100%); border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 16px 14px 16px; min-height: 96px; box-shadow: {shadow}; display: flex; flex-direction: column; justify-content: flex-start; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
-.metric-card:hover {{ transform: translateY(-3px); box-shadow: {"0 8px 20px rgba(0,0,0,0.28)" if dark else "0 8px 20px rgba(59,91,219,0.13)"}; }}
+.metric-card:hover {{ transform: translateY(-3px); box-shadow: {"0 8px 20px rgba(0,0,0,0.28)" if dark else "0 8px 20px rgba(31,112,193,0.14)"}; }}
 .metric-card .m-top {{ display:flex; align-items:center; gap:8px; }}
 .metric-card .m-icon {{ font-size: 1.1rem; }}
 .metric-card .m-label {{ font-size: 0.74rem; font-weight: 700; color: {text_muted}; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.4px; }}
@@ -187,7 +187,9 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .metric-card .m-trend {{ font-size: 0.76rem; font-weight: 700; }}
 
 /* ---- Kartu metrik varian OUTLINE (khusus landing page "Dashboard Utama" ---- */
-.metric-card-outline {{ background: linear-gradient(145deg, var(--card-tint) 0%, {surface} 72%); border: 2px solid var(--card-accent); border-radius: 14px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
+.metric-card-outline {{ position: relative; isolation: isolate; overflow: hidden; background: linear-gradient(145deg, var(--card-tint) 0%, {surface} 72%); border: 2px solid var(--card-accent); border-radius: 14px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
+.metric-card-outline::after {{ content: ''; position: absolute; z-index: 0; width: 72px; height: 72px; right: -26px; top: -26px; border-radius: 50%; background: var(--card-accent); opacity: 0.12; }}
+.metric-card-outline .mo-label, .metric-card-outline .mo-value, .metric-card-outline .mo-trend {{ position: relative; z-index: 1; }}
 .metric-card-outline:hover {{ transform: translateY(-3px); box-shadow: {"0 9px 20px rgba(0,0,0,0.25)" if dark else "0 9px 20px rgba(59,91,219,0.14)"}; }}
 .metric-card-outline .mo-label {{ font-size: 0.78rem; font-weight: 700; color: {text}; }}
 .metric-card-outline .mo-value {{ font-size: 1.5rem; font-weight: 800; color: {text}; }}
@@ -247,7 +249,7 @@ div[data-testid="column"] .stButton > button {{ padding: 0.25rem 0.6rem; font-si
 /* ---- Sidebar polish ---- */
 section[data-testid="stSidebar"] .stSelectbox label, section[data-testid="stSidebar"] .stSlider label {{ font-weight: 700; font-size: 0.82rem; }}
 .sidebar-brand {{ text-align:center; padding: 4px 0 14px 0; }}
-.logo-badge {{ width: 60px; height: 60px; margin: 0 auto; border-radius: 16px; background: linear-gradient(135deg, {PRIMARY} 0%, {SECONDARY} 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(79,70,229,0.35); }}
+.logo-badge {{ width: 60px; height: 60px; margin: 0 auto; border-radius: 16px; background: linear-gradient(135deg, {PRIMARY} 0%, {ACCENT} 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(31,112,193,0.30); }}
 .logo-img {{ width: 64px; height: 64px; object-fit: contain; background: #FFFFFF; border-radius: 50%; padding: 8px; box-shadow: 0 6px 16px rgba(30,64,175,0.2); display: block; margin: 0 auto; }}
 .logo-caption {{ font-size: 0.86rem; font-weight: 700; color: {text}; margin-top: 8px; }}
 .sidebar-caption {{ text-align:center; font-size:0.78rem; color:{text_muted}; margin-top:4px; }}
@@ -286,11 +288,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 /* ---- Tabel varian header berwarna (dipakai untuk tabel NTP / PDRB di
    halaman Pertanian & Pertumbuhan Ekonomi, sesuai skema warna prototype) ---- */
-.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #F5C518; }}
+.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #F6B328; }}
 .table-scroll.tbl-yellow .custom-table thead th {{ color: #1F2937 !important; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #B7E4C7; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #D9F2E3; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #F5C518; font-weight: 700; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #CDEED8; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #E8F7ED; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #FCE3B4; font-weight: 700; }}
 /* Latar sel di atas SELALU pastel terang (fixed, tidak ikut tema) - jadi
    warna teksnya juga WAJIB dipaksa gelap terus-menerus, supaya di mode
    gelap teksnya tidak ikut jadi putih/abu-abu terang (tak terbaca di atas
@@ -300,11 +302,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 .pdrb-table {{ width: 100%; border-collapse: collapse; font-size: 0.88em; text-align: center; }}
 .pdrb-table th, .pdrb-table td {{ padding: 9px 12px; border: 1px solid {border}; }}
-.pdrb-table thead th.grp-tahun {{ background-color: #F5C518; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-nilai {{ background-color: #A9D6F5; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-perkap {{ background-color: #F5B8DA; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-tahun {{ background-color: #FBD1E7; color: #1F2937 !important; font-weight: 700; }}
-.pdrb-table tbody td.col-nilai {{ background-color: #D6EBFB; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-tahun {{ background-color: #BFE7CE; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-nilai {{ background-color: #BFE4F7; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-perkap {{ background-color: #FCE0B3; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-tahun {{ background-color: #E7F6EB; color: #1F2937 !important; font-weight: 700; }}
+.pdrb-table tbody td.col-nilai {{ background-color: #E6F4FC; color: #1F2937 !important; }}
 .pdrb-table tbody td.col-perkap {{ background-color: {surface}; color: {text}; }}
 
 /* ---- Heatmap gender (IPM) ---- */
