@@ -286,11 +286,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 /* ---- Tabel varian header berwarna (dipakai untuk tabel NTP / PDRB di
    halaman Pertanian & Pertumbuhan Ekonomi, sesuai skema warna prototype) ---- */
-.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #F5C518; }}
+.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #EFC24D; }}
 .table-scroll.tbl-yellow .custom-table thead th {{ color: #1F2937 !important; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #B7E4C7; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #D9F2E3; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #F5C518; font-weight: 700; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #C8E3D0; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #E5F1E9; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #F3D67C; font-weight: 700; }}
 /* Latar sel di atas SELALU pastel terang (fixed, tidak ikut tema) - jadi
    warna teksnya juga WAJIB dipaksa gelap terus-menerus, supaya di mode
    gelap teksnya tidak ikut jadi putih/abu-abu terang (tak terbaca di atas
@@ -300,12 +300,12 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 .pdrb-table {{ width: 100%; border-collapse: collapse; font-size: 0.88em; text-align: center; }}
 .pdrb-table th, .pdrb-table td {{ padding: 9px 12px; border: 1px solid {border}; }}
-.pdrb-table thead th.grp-tahun {{ background-color: #F5C518; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-nilai {{ background-color: #A9D6F5; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-perkap {{ background-color: #F5B8DA; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-tahun {{ background-color: #FBD1E7; color: #1F2937 !important; font-weight: 700; }}
-.pdrb-table tbody td.col-nilai {{ background-color: #D6EBFB; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-perkap {{ background-color: {surface}; color: {text}; }}
+.pdrb-table thead th.grp-tahun {{ background-color: #E8CE86; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-nilai {{ background-color: #B9D8EE; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-perkap {{ background-color: #E7C6D8; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-tahun {{ background-color: #F3E7EE; color: #1F2937 !important; font-weight: 700; }}
+.pdrb-table tbody td.col-nilai {{ background-color: #DFEDF7; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-perkap {{ background-color: #F8EAF1; color: #1F2937 !important; }}
 
 /* ---- Heatmap gender (IPM) ---- */
 .gender-heat-table {{ width: 100%; border-collapse: collapse; font-size: 0.86em; text-align: center; }}
@@ -585,6 +585,14 @@ def fmt_id(value, decimals=0):
     try:
         s = f"{value:,.{decimals}f}" if decimals else f"{value:,.0f}"
         return s.replace(",", "#").replace(".", ",").replace("#", ".")
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def fmt_signed_id(value, decimals=2):
+    """Format angka bertanda dengan kaidah Indonesia, mis. +1.000,20."""
+    try:
+        return f"{'+' if float(value) > 0 else ''}{fmt_id(value, decimals)}"
     except (TypeError, ValueError):
         return str(value)
 
@@ -1003,7 +1011,7 @@ def trend_info(current, previous):
     delta = current - previous
     pct = (delta / previous) * 100
     direction = "up" if delta > 0 else ("down" if delta < 0 else "flat")
-    return f"{pct:+.2f}% dari periode sebelumnya", direction
+    return f"{fmt_signed_id(pct)}% dari periode sebelumnya", direction
 
 
 def section_guard(label: str):
@@ -1062,7 +1070,7 @@ def mini_trend_panel(col, title: str, years: list, values: list, color: str, dec
             _html(f"<div style='text-align:center; font-size:1.3rem; font-weight:800; color:{color};'>{fmt_id(last_val, decimals)}{suffix}</div>")
 
 
-def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_dir: str, spark_labels: list, spark_values: list, color: str, chart_type: str = "line"):
+def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_dir: str, spark_labels: list, spark_values: list, color: str, chart_type: str = "line", favorable_when_down: bool = False):
     """Kartu KPI kecil dengan angka besar + badge delta + grafik mini di
     bawahnya - dipakai untuk kartu IHK/Inflasi (halaman Inflasi) dan
     UHH/HLS/RLS/Pengeluaran (halaman IPM)."""
@@ -1071,7 +1079,8 @@ def sparkline_kpi_card(col, title: str, value_text: str, delta_text: str, delta_
             panel_title(title)
             trend_html = ""
             if delta_text:
-                cls = {"up": "m-up", "down": "m-down", "flat": "m-flat"}.get(delta_dir, "m-flat")
+                is_favorable = (delta_dir == "down" and favorable_when_down) or (delta_dir == "up" and not favorable_when_down)
+                cls = "m-up" if is_favorable else ("m-down" if delta_dir != "flat" else "m-flat")
                 arrow = {"up": "▲", "down": "▼", "flat": "▬"}.get(delta_dir, "▬")
                 trend_html = f"<div class='m-trend {cls}'>{arrow} {html.escape(delta_text)}</div>"
             _html(f"<div class='m-value'>{html.escape(value_text)}</div>{trend_html}")
@@ -1125,7 +1134,7 @@ def ipm_hero_card(tahun: int, value: float, prev_value: float, prev_tahun: int):
         direction = "up" if delta > 0 else ("down" if delta < 0 else "flat")
     cls = {"up": "m-up", "down": "m-down", "flat": "m-flat"}.get(direction, "m-flat")
     arrow = {"up": "▲", "down": "▼", "flat": "▬"}.get(direction, "▬")
-    badge = f"<span class='ipm-hero-badge {cls}'>{arrow} {abs(delta):.2f}</span>" if delta is not None else ""
+    badge = f"<span class='ipm-hero-badge {cls}'>{arrow} {fmt_id(abs(delta), 2)}</span>" if delta is not None else ""
     _html(
         "<div class='ipm-hero'>",
         f"<div class='ipm-hero-label'>IPM {int(tahun)}</div>",
@@ -1574,11 +1583,11 @@ elif sub_kategori == "Tenaga Kerja":
                 tpt_change = ""
                 if prev_tk is not None and pd.notna(prev_tk["tpt"]) and pd.notna(row_tk["tpt"]):
                     delta_tpt = row_tk["tpt"] - prev_tk["tpt"]
-                    tpt_change = f" TPT {'meningkat' if delta_tpt > 0 else 'menurun' if delta_tpt < 0 else 'tetap'} {abs(delta_tpt):.2f} poin persentase dari tahun sebelumnya."
+                    tpt_change = f" TPT {'meningkat' if delta_tpt > 0 else 'menurun' if delta_tpt < 0 else 'tetap'} {fmt_id(abs(delta_tpt), 2)} poin persentase dari tahun sebelumnya."
                 insight_box(
                     "Interpretasi",
-                    f"Pada {int(t_aktif_tk)}, TPT tercatat {row_tk['tpt']:g}%: artinya sekitar {row_tk['tpt']:g} dari setiap 100 orang angkatan kerja belum bekerja dan sedang mencari pekerjaan. "
-                    f"Sementara itu, TPAK sebesar {row_tk['tpak']:g}% menunjukkan besarnya penduduk usia kerja yang aktif di pasar kerja.{tpt_change} "
+                    f"Pada {int(t_aktif_tk)}, TPT tercatat {fmt_id(row_tk['tpt'], 2)}%: artinya sekitar {fmt_id(row_tk['tpt'], 2)} dari setiap 100 orang angkatan kerja belum bekerja dan sedang mencari pekerjaan. "
+                    f"Sementara itu, TPAK sebesar {fmt_id(row_tk['tpak'], 2)}% menunjukkan besarnya penduduk usia kerja yang aktif di pasar kerja.{tpt_change} "
                     f"TPT perlu dibaca bersama TPAK agar perubahan pengangguran tidak ditafsirkan terlepas dari perubahan partisipasi kerja.",
                 )
 
@@ -1601,7 +1610,7 @@ elif sub_kategori == "Tenaga Kerja":
                         }],
                     }
                     donut_click = st_echarts(options=donut_opts, height="220px", key="tk_donut", theme=e_theme, on_select="rerun", selection_mode="points")
-                    _html(f"<div class='donut-center'><div class='dc-label'>Angkatan Kerja</div><div class='dc-value'>{tpak_val:g}%</div></div>")
+                    _html(f"<div class='donut-center'><div class='dc-label'>Angkatan Kerja</div><div class='dc-value'>{fmt_id(tpak_val, 2)}%</div></div>")
 
             if "tk_kategori_aktif" not in st.session_state:
                 st.session_state["tk_kategori_aktif"] = "Angkatan Kerja"
@@ -1681,10 +1690,10 @@ elif sub_kategori == "Kemiskinan":
                 p0_change = ""
                 if prev_k is not None and pd.notna(prev_k["p0"]) and pd.notna(last["p0"]):
                     delta_p0 = last["p0"] - prev_k["p0"]
-                    p0_change = f" Angka ini {'naik' if delta_p0 > 0 else 'turun' if delta_p0 < 0 else 'tetap'} {abs(delta_p0):.2f} poin persentase dibandingkan tahun sebelumnya."
+                    p0_change = f" Angka ini {'naik' if delta_p0 > 0 else 'turun' if delta_p0 < 0 else 'tetap'} {fmt_id(abs(delta_p0), 2)} poin persentase dibandingkan tahun sebelumnya."
                 insight_box(
                     "Interpretasi",
-                    f"Pada {int(last['tahun'])}, P0 Kabupaten Tanah Laut sebesar {last['p0']:g}%, setara dengan {fmt_id(last['jml_miskin'])} jiwa yang pengeluarannya berada di bawah garis kemiskinan "
+                    f"Pada {int(last['tahun'])}, P0 Kabupaten Tanah Laut sebesar {fmt_id(last['p0'], 2)}%, setara dengan {fmt_id(last['jml_miskin'])} jiwa yang pengeluarannya berada di bawah garis kemiskinan "
                     f"Rp {fmt_id(last['garis_kemiskinan'])}/kapita/bulan.{p0_change} P0 menggambarkan luasnya kemiskinan; untuk menilai seberapa jauh dan seberapa timpang kondisi penduduk miskin, lihat P1 dan P2 pada grafik berikutnya.",
                 )
                 with st.container(border=True):
@@ -1718,12 +1727,11 @@ elif sub_kategori == "IPM":
                 last_i = df_i_valid.iloc[-1]
                 prev_i = df_i_valid.iloc[-2] if len(df_i_valid) > 1 else None
                 with c_hero:
-                    with st.container(border=True):
-                        ipm_hero_card(
-                            last_i["tahun"], last_i["ipm"],
-                            prev_i["ipm"] if prev_i is not None else np.nan,
-                            prev_i["tahun"] if prev_i is not None else np.nan,
-                        )
+                    ipm_hero_card(
+                        last_i["tahun"], last_i["ipm"],
+                        prev_i["ipm"] if prev_i is not None else np.nan,
+                        prev_i["tahun"] if prev_i is not None else np.nan,
+                    )
 
             sparkline_kpi_card(c_uhh, "Usia Harapan Hidup (UHH)", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0])
             sparkline_kpi_card(c_hls, "Harapan Lama Sekolah (HLS)", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0])
@@ -1732,14 +1740,14 @@ elif sub_kategori == "IPM":
 
             if not df_i_valid.empty:
                 gap = last_i["ipm"] - last_i["ipm_kalsel"] if pd.notna(last_i.get("ipm_kalsel")) else None
-                gap_txt = f" Posisi ini {'melampaui' if gap > 0 else 'berada di bawah' if gap < 0 else 'setara dengan'} rata-rata Kalimantan Selatan" + (f" sebesar {abs(gap):.2f} poin." if gap != 0 else ".") if gap is not None else ""
+                gap_txt = f" Posisi ini {'melampaui' if gap > 0 else 'berada di bawah' if gap < 0 else 'setara dengan'} rata-rata Kalimantan Selatan" + (f" sebesar {fmt_id(abs(gap), 2)} poin." if gap != 0 else ".") if gap is not None else ""
                 change_txt = ""
                 if prev_i is not None and pd.notna(prev_i["ipm"]):
                     delta_ipm = last_i["ipm"] - prev_i["ipm"]
-                    change_txt = f" Nilainya {'naik' if delta_ipm > 0 else 'turun' if delta_ipm < 0 else 'tetap'} {abs(delta_ipm):.2f} poin dibandingkan {int(prev_i['tahun'])}."
+                    change_txt = f" Nilainya {'naik' if delta_ipm > 0 else 'turun' if delta_ipm < 0 else 'tetap'} {fmt_id(abs(delta_ipm), 2)} poin dibandingkan {int(prev_i['tahun'])}."
                 insight_box(
                     "Interpretasi",
-                    f"IPM Kabupaten Tanah Laut pada {int(last_i['tahun'])} mencapai {last_i['ipm']:g}.{change_txt}{gap_txt} "
+                    f"IPM Kabupaten Tanah Laut pada {int(last_i['tahun'])} mencapai {fmt_id(last_i['ipm'], 2)}.{change_txt}{gap_txt} "
                     f"IPM merangkum capaian kesehatan, pendidikan, dan standar hidup; karena itu, perubahan indeks perlu dilihat bersama UHH, HLS, RLS, serta pengeluaran per kapita yang ditampilkan di atas.",
                 )
 
@@ -1801,24 +1809,24 @@ elif sub_kategori == "Inflasi":
                     if prev_row is None or pd.isna(last_row[col]) or pd.isna(prev_row[col]) or prev_row[col] == 0:
                         return None, "flat"
                     d = last_row[col] - prev_row[col]
-                    return f"{d:+.2f}%", ("up" if d > 0 else ("down" if d < 0 else "flat"))
+                    return f"{fmt_signed_id(d)}%", ("up" if d > 0 else ("down" if d < 0 else "flat"))
 
                 c1, c2, c3, c4 = st.columns(4)
                 dtxt, ddir = _delta("ihk")
-                sparkline_kpi_card(c1, "Indeks Harga Konsumen", fmt_id(last_row["ihk"], 2), dtxt, ddir, df_f["bulan"].tolist(), df_f["ihk"].tolist(), COLORS[2], chart_type="bar")
+                sparkline_kpi_card(c1, "Indeks Harga Konsumen", fmt_id(last_row["ihk"], 2), dtxt, ddir, df_f["bulan"].tolist(), df_f["ihk"].tolist(), COLORS[2], chart_type="bar", favorable_when_down=True)
                 dtxt, ddir = _delta("inflasi_mtm")
-                sparkline_kpi_card(c2, "Inflasi Month-to-Month", f"{last_row['inflasi_mtm']:g}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_mtm"].tolist(), COLORS[3])
+                sparkline_kpi_card(c2, "Inflasi Month-to-Month", f"{fmt_id(last_row['inflasi_mtm'], 2)}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_mtm"].tolist(), COLORS[3], favorable_when_down=True)
                 dtxt, ddir = _delta("inflasi_ytd")
-                sparkline_kpi_card(c3, "Inflasi Year-to-Date", f"{last_row['inflasi_ytd']:g}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_ytd"].tolist(), COLORS[1])
+                sparkline_kpi_card(c3, "Inflasi Year-to-Date", f"{fmt_id(last_row['inflasi_ytd'], 2)}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_ytd"].tolist(), COLORS[1], favorable_when_down=True)
                 dtxt, ddir = _delta("inflasi_yoy")
-                sparkline_kpi_card(c4, "Inflasi Year-on-Year", f"{last_row['inflasi_yoy']:g}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_yoy"].tolist(), COLORS[4])
+                sparkline_kpi_card(c4, "Inflasi Year-on-Year", f"{fmt_id(last_row['inflasi_yoy'], 2)}%", dtxt, ddir, df_f["bulan"].tolist(), df_f["inflasi_yoy"].tolist(), COLORS[4], favorable_when_down=True)
 
                 insight_box(
                     "Interpretasi",
-                    f"Pada {last_row['bulan']} 2026, IHK Kabupaten Tanah Laut berada di {last_row['ihk']:g}. Inflasi bulanan (mtm) sebesar "
-                    f"{last_row['inflasi_mtm']:g}% menunjukkan {'kenaikan' if last_row['inflasi_mtm'] > 0 else 'penurunan' if last_row['inflasi_mtm'] < 0 else 'stabilitas'} harga dibanding bulan sebelumnya; "
-                    f"secara kumulatif sejak awal tahun tercatat {last_row['inflasi_ytd']:g}% (ytd), sedangkan dibanding bulan yang sama tahun lalu sebesar "
-                    f"{last_row['inflasi_yoy']:g}% (yoy). Perhatikan komoditas penyumbang di bawah untuk memahami sumber tekanan harga pada bulan berjalan.",
+                    f"Pada {last_row['bulan']} 2026, IHK Kabupaten Tanah Laut berada di {fmt_id(last_row['ihk'], 2)}. Inflasi bulanan (mtm) sebesar "
+                    f"{fmt_id(last_row['inflasi_mtm'], 2)}% menunjukkan {'kenaikan' if last_row['inflasi_mtm'] > 0 else 'penurunan' if last_row['inflasi_mtm'] < 0 else 'stabilitas'} harga dibanding bulan sebelumnya; "
+                    f"secara kumulatif sejak awal tahun tercatat {fmt_id(last_row['inflasi_ytd'], 2)}% (ytd), sedangkan dibanding bulan yang sama tahun lalu sebesar "
+                    f"{fmt_id(last_row['inflasi_yoy'], 2)}% (yoy). Perhatikan komoditas penyumbang di bawah untuk memahami sumber tekanan harga pada bulan berjalan.",
                 )
 
                 # ---- Kotak dokumen PDF Bahan Rilis Inflasi ----
@@ -1981,8 +1989,8 @@ elif sub_kategori == "Inflasi":
                         insight_box(
                             "Interpretasi Komoditas Pendorong & Penahan Inflasi",
                             f"Pada {bulan_aktif}, kenaikan harga terbesar didorong oleh {str(top_now['komoditas']).title()} "
-                            f"dengan andil {top_now[bulan_aktif]:g}%. Di sisi lain, komoditas penahan inflasi utama adalah "
-                            f"{str(bottom_now['komoditas']).title()} dengan andil {bottom_now[bulan_aktif]:g}%. Selama tahun "
+                            f"dengan andil {fmt_id(top_now[bulan_aktif], 2)}%. Di sisi lain, komoditas penahan inflasi utama adalah "
+                            f"{str(bottom_now['komoditas']).title()} dengan andil {fmt_id(bottom_now[bulan_aktif], 2)}%. Selama tahun "
                             f"{int(last_row['tahun'])}, komoditas yang konsisten mendorong inflasi adalah {str(freq_p_name).title()} "
                             f"(muncul {freq_p_val}x sebagai Top 10) dan komoditas yang konsisten menahan inflasi adalah "
                             f"{str(freq_t_name).title()} (muncul {freq_t_val}x sebagai Top 10).",
@@ -2161,7 +2169,7 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
             row_p = row_p_series.iloc[0] if not row_p_series.empty else df_p.iloc[-1]
             insight_box(
                 "Interpretasi",
-                f"Ekonomi Tanah Laut tumbuh {row_p['pert_eko']:.2f}% pada {int(t_aktif_p)}. PDRB per kapita atas dasar harga konstan (ADHK) tercatat "
+                f"Ekonomi Tanah Laut tumbuh {fmt_id(row_p['pert_eko'], 2)}% pada {int(t_aktif_p)}. PDRB per kapita atas dasar harga konstan (ADHK) tercatat "
                 f"Rp {fmt_id(row_p['pdptn_perkapita_adhk'])} ribu, sehingga perubahan nilainya lebih mencerminkan perubahan volume kegiatan ekonomi daripada sekadar kenaikan harga. "
                 f"Untuk melihat sumber pertumbuhannya, perhatikan distribusi PDRB menurut lapangan usaha dan pengeluaran di bawah.",
             )
