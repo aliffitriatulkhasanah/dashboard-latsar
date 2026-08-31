@@ -9,7 +9,7 @@ Inflasi, Pertumbuhan Ekonomi, Pertanian) dan struktur database Excel baru
 CSS, helper komponen (_html, page_header, metric_card, insight_box, panel_title,
 render_custom_table+pagination, section_guard, dst) di-reuse dari versi
 sebelumnya karena sudah teruji lewat banyak putaran perbaikan (bug rendering
-HTML, dark/light mode, responsivitas, dll) - lihat komentar di masing-masing
+HTML, dark/light mode, responsivitas, dsb) - lihat komentar di masing-masing
 fungsi untuk detail kenapa ditulis seperti itu.
 
 Patch (Agustus 2026): get_komoditas() dibuat mendeteksi baris header nama
@@ -223,8 +223,7 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .donut-center .dc-value {{ font-size: 1.5rem; font-weight: 800; color: {PRIMARY}; }}
 
 /* ---- Kartu hero IPM (lebih besar dari metric-card biasa, sesuai desain) ---- */
-.ipm-hero {{ box-sizing: border-box; height: 226px; overflow: hidden; background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 18px 20px; box-shadow: {shadow}; }}
-div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ height: 226px; box-sizing: border-box; }}
+.ipm-hero {{ box-sizing: border-box; height: 180px; overflow: hidden; background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 16px 18px; box-shadow: {shadow}; }}
 .ipm-hero-label {{ font-size: 0.85rem; font-weight: 700; color: {text_muted}; text-transform: uppercase; letter-spacing: 0.4px; }}
 .ipm-hero-row {{ display: flex; align-items: baseline; gap: 12px; margin-top: 8px; }}
 .ipm-hero-value {{ font-size: 2.4rem; font-weight: 900; color: {text}; }}
@@ -296,26 +295,26 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 /* ---- Tabel varian header berwarna (dipakai untuk tabel NTP / PDRB di
    halaman Pertanian & Pertumbuhan Ekonomi, sesuai skema warna prototype) ---- */
-.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #E2B75A; }}
-.table-scroll.tbl-yellow .custom-table thead th {{ color: #1F2937 !important; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #C9DECC; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #E8F0E9; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #E8CB82; font-weight: 700; }}
+.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: {"#3B4654" if dark else "#E2B75A"}; }}
+.table-scroll.tbl-yellow .custom-table thead th {{ color: {"#E5E7EB" if dark else "#1F2937"} !important; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: {"#1F2937" if dark else "#C9DECC"}; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: {"#17212F" if dark else "#E8F0E9"}; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: {"#303B49" if dark else "#E8CB82"}; font-weight: 700; }}
 /* Latar sel di atas SELALU pastel terang (fixed, tidak ikut tema) - jadi
    warna teksnya juga WAJIB dipaksa gelap terus-menerus, supaya di mode
    gelap teksnya tidak ikut jadi putih/abu-abu terang (tak terbaca di atas
    latar terang). !important perlu karena aturan umum "h1,h2,h3,h4,p,label,
    span" di atas sudah men-set warna teks ikut tema dengan spesifisitas tag. */
-.table-scroll.tbl-yellow .custom-table tbody td {{ color: #1F2937 !important; }}
+.table-scroll.tbl-yellow .custom-table tbody td {{ color: {"#E5E7EB" if dark else "#1F2937"} !important; }}
 
 .pdrb-table {{ width: 100%; border-collapse: collapse; font-size: 0.88em; text-align: center; }}
 .pdrb-table th, .pdrb-table td {{ padding: 9px 12px; border: 1px solid {border}; }}
-.pdrb-table thead th.grp-tahun {{ background-color: #E2C67B; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-nilai {{ background-color: #A8C9E1; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-perkap {{ background-color: #B9D7B9; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-tahun {{ background-color: #F5EACD; color: #1F2937 !important; font-weight: 700; }}
-.pdrb-table tbody td.col-nilai {{ background-color: #E4F0F8; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-perkap {{ background-color: #E5F1E5; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-tahun {{ background-color: {"#36404C" if dark else "#E2C67B"}; color: {"#E5E7EB" if dark else "#1F2937"} !important; }}
+.pdrb-table thead th.grp-nilai {{ background-color: {"#2E4257" if dark else "#A8C9E1"}; color: {"#E5E7EB" if dark else "#1F2937"} !important; }}
+.pdrb-table thead th.grp-perkap {{ background-color: {"#34483B" if dark else "#B9D7B9"}; color: {"#E5E7EB" if dark else "#1F2937"} !important; }}
+.pdrb-table tbody td.col-tahun {{ background-color: {"#202A36" if dark else "#F5EACD"}; color: {"#E5E7EB" if dark else "#1F2937"} !important; font-weight: 700; }}
+.pdrb-table tbody td.col-nilai {{ background-color: {"#182536" if dark else "#E4F0F8"}; color: {"#E5E7EB" if dark else "#1F2937"} !important; }}
+.pdrb-table tbody td.col-perkap {{ background-color: {"#1D2B24" if dark else "#E5F1E5"}; color: {"#E5E7EB" if dark else "#1F2937"} !important; }}
 
 /* ---- Heatmap gender (IPM) ---- */
 .gender-heat-table {{ width: 100%; border-collapse: collapse; font-size: 0.86em; text-align: center; }}
@@ -485,8 +484,7 @@ div[data-testid="stSlider"] [data-testid="stTickBarMin"], div[data-testid="stSli
     .pdf-card-icon {{ font-size: 1.5rem; }}
     .pdf-card-title {{ font-size: 0.88rem; }}
     .pdf-card-sub {{ font-size: 0.75rem; }}
-    .ipm-hero {{ height: 196px; padding: 16px 18px; }}
-    div[class*="st-key-ipm-kpi_"] [data-testid="stVerticalBlockBorderWrapper"] {{ height: 196px; }}
+    .ipm-hero {{ height: 180px; padding: 16px 18px; }}
     /* Kartu/panel di dalam st.container(border=True) diberi jarak bawah
        sedikit lebih besar supaya tidak terasa berdempetan saat kolom-kolom
        ikut stack vertikal (perilaku default Streamlit di layar sempit). */
