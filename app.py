@@ -74,14 +74,11 @@ if "kepen_wilayah_pending" in st.session_state:
     st.session_state["kepen_wilayah"] = st.session_state.pop("kepen_wilayah_pending")
 
 SHEET_ID = st.secrets.get("SHEET_ID", "1nQh8AezWpM8TfsaknlNO922yqqBWWBfDKah4fm9tpHU")
-# Tema “Professional Bright”: fondasi biru yang formal dengan aksen teal,
-# amber, vermilion, dan ungu. Seri grafik memakai palet Okabe-Ito yang lebih
-# mudah dibedakan oleh pengguna dengan ragam buta warna.
-PRIMARY = "#0072B2"       # BPS-friendly blue — identitas / aksi utama
-SECONDARY = "#009E73"     # teal — status positif / seri pembanding
-ACCENT = "#E69F00"        # amber — sorotan
-COLORS = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9", "#D55E00"]
-CARD_ACCENTS = ["#0072B2", "#009E73", "#E69F00", "#CC79A7", "#56B4E9"]
+PRIMARY = "#4F46E5"
+SECONDARY = "#7C3AED"
+ACCENT = "#F59E0B"
+COLORS = ["#4F46E5", "#F59E0B", "#10B981", "#EC4899", "#06B6D4", "#D97706"]
+CARD_ACCENTS = ["#4F46E5", "#F59E0B", "#EC4899", "#06B6D4", "#10B981"]
 GEOJSON_PATH = "tanah_laut.geojson"
 LOGO_PATH = "bps.png"
 
@@ -146,14 +143,14 @@ def _html(*parts: str) -> str:
 # 3. CSS / TEMA
 # ==============================================================================
 def inject_css(dark: bool):
-    bg = "#0F172A" if dark else "#F7FAFC"
-    surface = "#172033" if dark else "#FFFFFF"
-    sidebar_bg = "#101827" if dark else "#F1F5F9"
-    text = "#E6EEF8" if dark else "#172033"
-    text_muted = "#9FB0C6" if dark else "#64748B"
-    border = "rgba(148,163,184,0.20)" if dark else "rgba(15,23,42,0.10)"
-    shadow = "0 6px 18px rgba(0,0,0,0.25)" if dark else "0 4px 14px rgba(15,23,42,0.08)"
-    stripe = "rgba(255,255,255,0.035)" if dark else "rgba(15,23,42,0.025)"
+    bg = "#0B1120" if dark else "#F7F9FC"
+    surface = "#161B29" if dark else "#FFFFFF"
+    sidebar_bg = "#111827" if dark else "#FFFFFF"
+    text = "#E5E7EB" if dark else "#1F2937"
+    text_muted = "#9CA3AF" if dark else "#6B7280"
+    border = "rgba(255,255,255,0.08)" if dark else "rgba(15,23,42,0.08)"
+    shadow = "0 1px 3px rgba(0,0,0,0.4)" if dark else "0 1px 3px rgba(15,23,42,0.06)"
+    stripe = "rgba(255,255,255,0.02)" if dark else "rgba(15,23,42,0.015)"
 
     st.markdown(
         f"""
@@ -188,12 +185,12 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .metric-card .m-trend {{ font-size: 0.76rem; font-weight: 700; }}
 
 /* ---- Kartu metrik varian OUTLINE (khusus landing page "Dashboard Utama" ---- */
-.metric-card-outline {{ background-color: {surface}; border: 2px solid {PRIMARY}; border-radius: 12px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
+.metric-card-outline {{ background-color: {surface}; border: 3px solid #C8A96B; border-radius: 10px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
 .metric-card-outline:hover {{ transform: translateY(-2px); box-shadow: {shadow}; }}
 .metric-card-outline .mo-label {{ font-size: 0.78rem; font-weight: 700; color: {text}; }}
 .metric-card-outline .mo-value {{ font-size: 1.5rem; font-weight: 800; color: {text}; }}
 .metric-card-outline .mo-trend {{ font-size: 0.76rem; font-weight: 700; }}
-.m-up {{ color: #009E73; }} .m-down {{ color: #D55E00; }} .m-flat {{ color: {text_muted}; }}
+.m-up {{ color: #10B981; }} .m-down {{ color: #EF4444; }} .m-flat {{ color: {text_muted}; }}
 
 /* ---- Kotak interpretasi otomatis ---- */
 .insight-box {{ background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {ACCENT}; padding: 14px 18px; border-radius: 10px; margin: 6px 0 22px 0; box-shadow: {shadow}; }}
@@ -224,7 +221,7 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .donut-center .dc-value {{ font-size: 1.5rem; font-weight: 800; color: {PRIMARY}; }}
 
 /* ---- Kartu hero IPM (lebih besar dari metric-card biasa, sesuai desain) ---- */
-.ipm-hero {{ background: linear-gradient(135deg, {"#16334A" if dark else "#E6F2FA"} 0%, {"#122B3D" if dark else "#D8ECF8"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
+.ipm-hero {{ background: linear-gradient(135deg, {"#3A3624" if dark else "#EFE7D0"} 0%, {"#2E2B1C" if dark else "#E8DFC0"} 100%); border-radius: 14px; padding: 20px 24px; box-shadow: {shadow}; }}
 .ipm-hero-label {{ font-size: 0.85rem; font-weight: 700; color: {text_muted}; text-transform: uppercase; letter-spacing: 0.4px; }}
 .ipm-hero-row {{ display: flex; align-items: baseline; gap: 12px; margin-top: 8px; }}
 .ipm-hero-value {{ font-size: 2.4rem; font-weight: 900; color: {text}; }}
@@ -242,14 +239,14 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .custom-table tbody tr:last-of-type {{ border-bottom: 2px solid {PRIMARY}; }}
 div[data-testid="column"] .stButton > button {{ padding: 0.25rem 0.6rem; font-size: 0.82rem; }}
 .data-error {{ background-color: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-left: 4px solid #EF4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 0.86rem; }}
-.data-info {{ background-color: rgba(0,114,178,0.08); border: 1px solid rgba(0,114,178,0.20); border-left: 4px solid {PRIMARY}; padding: 10px 16px; border-radius: 10px; margin-bottom: 14px; font-size: 0.85rem; }}
+.data-info {{ background-color: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); border-left: 4px solid {PRIMARY}; padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; }}
 .footer-note {{ text-align:center; opacity:0.55; font-size:0.76rem; margin-top:36px; color: {text_muted}; }}
 
 /* ---- Sidebar polish ---- */
 section[data-testid="stSidebar"] .stSelectbox label, section[data-testid="stSidebar"] .stSlider label {{ font-weight: 700; font-size: 0.82rem; }}
 .sidebar-brand {{ text-align:center; padding: 4px 0 14px 0; }}
-.logo-badge {{ width: 60px; height: 60px; margin: 0 auto; border-radius: 16px; background: linear-gradient(135deg, {PRIMARY} 0%, {SECONDARY} 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(0,114,178,0.28); }}
-.logo-img {{ width: 64px; height: 64px; object-fit: contain; background: #FFFFFF; border-radius: 50%; padding: 8px; box-shadow: 0 5px 14px rgba(0,114,178,0.14); display: block; margin: 0 auto; }}
+.logo-badge {{ width: 60px; height: 60px; margin: 0 auto; border-radius: 16px; background: linear-gradient(135deg, {PRIMARY} 0%, {SECONDARY} 100%); display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(79,70,229,0.35); }}
+.logo-img {{ width: 64px; height: 64px; object-fit: contain; background: #FFFFFF; border-radius: 50%; padding: 8px; box-shadow: 0 6px 16px rgba(30,64,175,0.2); display: block; margin: 0 auto; }}
 .logo-caption {{ font-size: 0.86rem; font-weight: 700; color: {text}; margin-top: 8px; }}
 .sidebar-caption {{ text-align:center; font-size:0.78rem; color:{text_muted}; margin-top:4px; }}
 
@@ -276,7 +273,7 @@ div[class*="st-key-subnav_"] .stButton > button {{
     box-shadow: none !important; justify-content: flex-start !important;
 }}
 div[class*="st-key-subnav_"] .stButton > button[kind="primary"] {{
-    background-color: {PRIMARY} !important; color: #FFFFFF !important;
+    background-color: #B08998 !important; color: #FFFFFF !important;
 }}
 div[class*="st-key-subnav_"] .stButton > button[kind="secondary"] {{
     background-color: {"#374151" if dark else "#E5E7EB"} !important; color: {text} !important;
@@ -287,11 +284,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 /* ---- Tabel varian header berwarna (dipakai untuk tabel NTP / PDRB di
    halaman Pertanian & Pertumbuhan Ekonomi, sesuai skema warna prototype) ---- */
-.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #F4D58D; }}
+.table-scroll.tbl-yellow .custom-table thead tr {{ background-color: #F5C518; }}
 .table-scroll.tbl-yellow .custom-table thead th {{ color: #1F2937 !important; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #D9F0E8; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #EFF9F5; }}
-.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #F4D58D; font-weight: 700; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(odd) {{ background-color: #B7E4C7; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:nth-of-type(even) {{ background-color: #D9F2E3; }}
+.table-scroll.tbl-yellow .custom-table tbody tr:last-of-type {{ background-color: #F5C518; font-weight: 700; }}
 /* Latar sel di atas SELALU pastel terang (fixed, tidak ikut tema) - jadi
    warna teksnya juga WAJIB dipaksa gelap terus-menerus, supaya di mode
    gelap teksnya tidak ikut jadi putih/abu-abu terang (tak terbaca di atas
@@ -301,11 +298,11 @@ div[class*="st-key-subnav_"] .stButton > button[kind="secondary"]:hover {{
 
 .pdrb-table {{ width: 100%; border-collapse: collapse; font-size: 0.88em; text-align: center; }}
 .pdrb-table th, .pdrb-table td {{ padding: 9px 12px; border: 1px solid {border}; }}
-.pdrb-table thead th.grp-tahun {{ background-color: #F4D58D; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-nilai {{ background-color: #BFE6DD; color: #1F2937 !important; }}
-.pdrb-table thead th.grp-perkap {{ background-color: #DCC7E9; color: #1F2937 !important; }}
-.pdrb-table tbody td.col-tahun {{ background-color: #E5F1FA; color: #1F2937 !important; font-weight: 700; }}
-.pdrb-table tbody td.col-nilai {{ background-color: #E9F6F3; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-tahun {{ background-color: #F5C518; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-nilai {{ background-color: #A9D6F5; color: #1F2937 !important; }}
+.pdrb-table thead th.grp-perkap {{ background-color: #F5B8DA; color: #1F2937 !important; }}
+.pdrb-table tbody td.col-tahun {{ background-color: #FBD1E7; color: #1F2937 !important; font-weight: 700; }}
+.pdrb-table tbody td.col-nilai {{ background-color: #D6EBFB; color: #1F2937 !important; }}
 .pdrb-table tbody td.col-perkap {{ background-color: {surface}; color: {text}; }}
 
 /* ---- Heatmap gender (IPM) ---- */
@@ -1317,9 +1314,9 @@ if kategori == "Dashboard Utama":
                     vmax = max(pddk_vals) if pddk_vals else 100000
 
                     # Penyesuaian batas wilayah & gradasi warna (Terang -> Gelap)
-                    map_border = "#6085A2" if tema_gelap else "#7EA9C9"
+                    map_border = "#607456" if tema_gelap else "#64748B"
                     # Warna gradasi: Terang (penduduk sedikit) ke Gelap (penduduk banyak)
-                    gradasi_warna = ["#173B56", "#1D5E83", "#218FA4"] if tema_gelap else ["#EAF4FB", "#B9DDF2", "#72B8DF", "#0072B2"]
+                    gradasi_warna = ["#E8DFCA", "#CFAB8D", "#B87C4C"] if tema_gelap else ["#F7E49B", "#86BCBD", "#A4CE8B", "#BA5A5A"]
 
                     map_opts = {
                         "backgroundColor": "transparent",
@@ -1339,7 +1336,7 @@ if kategori == "Dashboard Utama":
                             "left": "left",
                             "bottom": "0%",
                             "inRange": {"color": gradasi_warna},
-                                "textStyle": {"color": "#9FB0C6" if tema_gelap else "#64748B"},
+                            "textStyle": {"color": "#9CA3AF" if tema_gelap else "#4B5563"},
                             "formatter": JsCode("function(value){ return Number(value).toLocaleString('id-ID'); }"),
                             "itemWidth": 12,
                             "itemHeight": 90
@@ -1438,7 +1435,14 @@ elif sub_kategori == "Kependudukan":
 
                 with c_insight:
                     if pddk_now:
-                        insight_box("Interpretasi", f"Populasi {label_wilayah} pada {int(t_aktif_k)} {'naik' if dir_now == 'up' else 'turun'} {pddk_now}.")
+                        arah = "bertambah" if dir_now == "up" else "berkurang" if dir_now == "down" else "relatif tetap"
+                        insight_box(
+                            "Interpretasi",
+                            f"Pada {int(t_aktif_k)}, jumlah penduduk {label_wilayah} mencapai {fmt_id(row_target['jumlah_penduduk'])} jiwa, "
+                            f"atau {arah} {pddk_now} dibandingkan tahun sebelumnya. Perubahan ini perlu dibaca bersama "
+                            f"kepadatan penduduk dan rasio jenis kelamin di bawahnya, karena pertambahan penduduk tidak selalu "
+                            f"tersebar merata antarwilayah maupun antarkelompok penduduk.",
+                        )
 
                 c_map, c_gender, c_rasio = st.columns([1.1, 1.2, 0.8])
                 map_click = None
@@ -1460,7 +1464,7 @@ elif sub_kategori == "Kependudukan":
                                         "function(p){if(!p.data)return '<b>'+p.name+'</b><br/>Data tidak tersedia';"
                                         "return '<b>'+p.name+'</b><br/>Kepadatan: <b>'+Number(p.value).toLocaleString('id-ID')+' jiwa/km\u00b2</b><br/>Penduduk: <b>'+Number(p.data.pddk).toLocaleString('id-ID')+' jiwa</b>';}"
                                     )},
-                                "visualMap": {"show": True, "min": vmin, "max": vmax, "left": "left", "bottom": "0%", "inRange": {"color": ["#EAF4FB", "#7CBDE2", PRIMARY]}, "textStyle": {"color": "#64748B"}, "itemWidth": 10, "itemHeight": 70},
+                                    "visualMap": {"show": True, "min": vmin, "max": vmax, "left": "left", "bottom": "0%", "inRange": {"color": ["#FEF3C7", PRIMARY]}, "textStyle": {"color": "#888"}, "itemWidth": 10, "itemHeight": 70},
                                     "series": [{
                                         "type": "map", "map": "TALA", "roam": False, "label": {"show": False},
                                         "itemStyle": {"borderColor": map_border_dens, "borderWidth": 1.5},
@@ -1551,7 +1555,17 @@ elif sub_kategori == "Tenaga Kerja":
             row_tk = row_series.iloc[0] if not row_series.empty else df_tk.iloc[-1]
 
             with c_insight:
-                insight_box("Interpretasi", f"Pada {int(t_aktif_tk)}, TPT tercatat {row_tk['tpt']:g}% dan TPAK {row_tk['tpak']:g}%.")
+                prev_tk = df_tk[df_tk["tahun"] < t_aktif_tk].iloc[-1] if (df_tk["tahun"] < t_aktif_tk).any() else None
+                tpt_change = ""
+                if prev_tk is not None and pd.notna(prev_tk["tpt"]) and pd.notna(row_tk["tpt"]):
+                    delta_tpt = row_tk["tpt"] - prev_tk["tpt"]
+                    tpt_change = f" TPT {'meningkat' if delta_tpt > 0 else 'menurun' if delta_tpt < 0 else 'tetap'} {abs(delta_tpt):.2f} poin persentase dari tahun sebelumnya."
+                insight_box(
+                    "Interpretasi",
+                    f"Pada {int(t_aktif_tk)}, TPT tercatat {row_tk['tpt']:g}%: artinya sekitar {row_tk['tpt']:g} dari setiap 100 orang angkatan kerja belum bekerja dan sedang mencari pekerjaan. "
+                    f"Sementara itu, TPAK sebesar {row_tk['tpak']:g}% menunjukkan besarnya penduduk usia kerja yang aktif di pasar kerja.{tpt_change} "
+                    f"TPT perlu dibaca bersama TPAK agar perubahan pengangguran tidak ditafsirkan terlepas dari perubahan partisipasi kerja.",
+                )
 
             c_donut, c_stack, c_rasio = st.columns([1, 1.4, 0.8])
             donut_click = None
@@ -1648,10 +1662,15 @@ elif sub_kategori == "Kemiskinan":
                     }
                     st_echarts(options=dual_opts, height="380px", key="mis_dual", theme=e_theme)
             with c2:
+                prev_k = df_k.iloc[-2] if len(df_k) > 1 else None
+                p0_change = ""
+                if prev_k is not None and pd.notna(prev_k["p0"]) and pd.notna(last["p0"]):
+                    delta_p0 = last["p0"] - prev_k["p0"]
+                    p0_change = f" Angka ini {'naik' if delta_p0 > 0 else 'turun' if delta_p0 < 0 else 'tetap'} {abs(delta_p0):.2f} poin persentase dibandingkan tahun sebelumnya."
                 insight_box(
                     "Interpretasi",
-                    f"Pada {int(last['tahun'])}, persentase penduduk miskin (P0) Kabupaten Tanah Laut sebesar {last['p0']:g}%, "
-                    f"dengan {fmt_id(last['jml_miskin'])} jiwa berada di bawah garis kemiskinan Rp {fmt_id(last['garis_kemiskinan'])}/kapita/bulan.",
+                    f"Pada {int(last['tahun'])}, P0 Kabupaten Tanah Laut sebesar {last['p0']:g}%, setara dengan {fmt_id(last['jml_miskin'])} jiwa yang pengeluarannya berada di bawah garis kemiskinan "
+                    f"Rp {fmt_id(last['garis_kemiskinan'])}/kapita/bulan.{p0_change} P0 menggambarkan luasnya kemiskinan; untuk menilai seberapa jauh dan seberapa timpang kondisi penduduk miskin, lihat P1 dan P2 pada grafik berikutnya.",
                 )
                 with st.container(border=True):
                     df_gini_valid = df_k.dropna(subset=["gini"])
@@ -1698,8 +1717,16 @@ elif sub_kategori == "IPM":
 
             if not df_i_valid.empty:
                 gap = last_i["ipm"] - last_i["ipm_kalsel"] if pd.notna(last_i.get("ipm_kalsel")) else None
-                gap_txt = f" — {'melampaui' if gap > 0 else 'di bawah'} rata-rata provinsi sebesar {abs(gap):.2f} poin." if gap is not None else "."
-                insight_box("Interpretasi", f"IPM Kabupaten Tanah Laut pada {int(last_i['tahun'])} sebesar {last_i['ipm']:g}{gap_txt}")
+                gap_txt = f" Posisi ini {'melampaui' if gap > 0 else 'berada di bawah' if gap < 0 else 'setara dengan'} rata-rata Kalimantan Selatan" + (f" sebesar {abs(gap):.2f} poin." if gap != 0 else ".") if gap is not None else ""
+                change_txt = ""
+                if prev_i is not None and pd.notna(prev_i["ipm"]):
+                    delta_ipm = last_i["ipm"] - prev_i["ipm"]
+                    change_txt = f" Nilainya {'naik' if delta_ipm > 0 else 'turun' if delta_ipm < 0 else 'tetap'} {abs(delta_ipm):.2f} poin dibandingkan {int(prev_i['tahun'])}."
+                insight_box(
+                    "Interpretasi",
+                    f"IPM Kabupaten Tanah Laut pada {int(last_i['tahun'])} mencapai {last_i['ipm']:g}.{change_txt}{gap_txt} "
+                    f"IPM merangkum capaian kesehatan, pendidikan, dan standar hidup; karena itu, perubahan indeks perlu dilihat bersama UHH, HLS, RLS, serta pengeluaran per kapita yang ditampilkan di atas.",
+                )
 
             with st.container(border=True):
                 panel_title("Perbandingan IPM Tanah Laut dan Kalimantan Selatan")
@@ -1773,9 +1800,10 @@ elif sub_kategori == "Inflasi":
 
                 insight_box(
                     "Interpretasi",
-                    f"Pada {last_row['bulan']} 2026, IHK Kabupaten Tanah Laut tercatat {last_row['ihk']:g} dengan inflasi "
-                    f"bulanan (mtm) {last_row['inflasi_mtm']:g}%, inflasi tahun berjalan (ytd) {last_row['inflasi_ytd']:g}%, "
-                    f"dan inflasi tahunan (yoy) {last_row['inflasi_yoy']:g}%.",
+                    f"Pada {last_row['bulan']} 2026, IHK Kabupaten Tanah Laut berada di {last_row['ihk']:g}. Inflasi bulanan (mtm) sebesar "
+                    f"{last_row['inflasi_mtm']:g}% menunjukkan {'kenaikan' if last_row['inflasi_mtm'] > 0 else 'penurunan' if last_row['inflasi_mtm'] < 0 else 'stabilitas'} harga dibanding bulan sebelumnya; "
+                    f"secara kumulatif sejak awal tahun tercatat {last_row['inflasi_ytd']:g}% (ytd), sedangkan dibanding bulan yang sama tahun lalu sebesar "
+                    f"{last_row['inflasi_yoy']:g}% (yoy). Perhatikan komoditas penyumbang di bawah untuk memahami sumber tekanan harga pada bulan berjalan.",
                 )
 
                 # ---- Kotak dokumen PDF Bahan Rilis Inflasi ----
@@ -1937,12 +1965,10 @@ elif sub_kategori == "Inflasi":
                         freq_t_name, freq_t_val = max(penahan_freq.items(), key=lambda kv: kv[1])
                         insight_box(
                             "Interpretasi Komoditas Pendorong & Penahan Inflasi",
-                            f"Pada {bulan_aktif}, kenaikan harga terbesar didorong oleh {str(top_now['komoditas']).title()} "
-                            f"dengan andil {top_now[bulan_aktif]:g}%. Di sisi lain, komoditas penahan inflasi utama adalah "
-                            f"{str(bottom_now['komoditas']).title()} dengan andil {bottom_now[bulan_aktif]:g}%. Selama tahun "
-                            f"{int(last_row['tahun'])}, komoditas yang konsisten mendorong inflasi adalah {str(freq_p_name).title()} "
-                            f"(muncul {freq_p_val}x sebagai Top 10) dan komoditas yang konsisten menahan inflasi adalah "
-                            f"{str(freq_t_name).title()} (muncul {freq_t_val}x sebagai Top 10).",
+                            f"Tekanan harga pada {bulan_aktif} terutama berasal dari {str(top_now['komoditas']).title()} dengan andil {top_now[bulan_aktif]:g}%, "
+                            f"yakni kontribusi terbesar terhadap inflasi bulan berjalan. Sebaliknya, {str(bottom_now['komoditas']).title()} memberi andil {bottom_now[bulan_aktif]:g}% "
+                            f"dan menjadi penahan inflasi utama. Dalam tahun {int(last_row['tahun'])}, {str(freq_p_name).title()} paling konsisten masuk kelompok 10 pendorong teratas "
+                            f"({freq_p_val} kali), sedangkan {str(freq_t_name).title()} paling konsisten menjadi penahan ({freq_t_val} kali). Frekuensi ini menunjukkan pola berulang, bukan besarnya dampak pada setiap bulan.",
                         )
 
                 df_harga = apply_filter(get_df("Harga"), (2026, 2026))
@@ -2118,8 +2144,9 @@ elif sub_kategori == "Pertumbuhan Ekonomi":
             row_p = row_p_series.iloc[0] if not row_p_series.empty else df_p.iloc[-1]
             insight_box(
                 "Interpretasi",
-                f"Ekonomi Tanah Laut tumbuh {row_p['pert_eko']:.2f}% pada {int(t_aktif_p)}, dengan PDRB per kapita "
-                f"(ADHK) sebesar Rp {fmt_id(row_p['pdptn_perkapita_adhk'])} ribu.",
+                f"Ekonomi Tanah Laut tumbuh {row_p['pert_eko']:.2f}% pada {int(t_aktif_p)}. PDRB per kapita atas dasar harga konstan (ADHK) tercatat "
+                f"Rp {fmt_id(row_p['pdptn_perkapita_adhk'])} ribu, sehingga perubahan nilainya lebih mencerminkan perubahan volume kegiatan ekonomi daripada sekadar kenaikan harga. "
+                f"Untuk melihat sumber pertumbuhannya, perhatikan distribusi PDRB menurut lapangan usaha dan pengeluaran di bawah.",
             )
 
             def _donut_grouped(df_kat, top_n=5):
@@ -2187,7 +2214,7 @@ elif kategori == "Pertanian":
                             "xAxis": {"type": "category", "data": df_kom["tahun"].astype(str).tolist()},
                             "yAxis": [{"type": "value", "name": "Ha", "splitLine": {"show": False}}, {"type": "value", "name": "Ton"}],
                             "series": [
-                                {"name": "Luas Panen", "type": "bar", "data": df_kom["luas_panen"].tolist(), "itemStyle": {"color": "#8BC5E7", "borderRadius": [4, 4, 0, 0]}},
+                                {"name": "Luas Panen", "type": "bar", "data": df_kom["luas_panen"].tolist(), "itemStyle": {"color": "#BFDBFE", "borderRadius": [4, 4, 0, 0]}},
                                 {"name": "Produksi", "type": "line", "yAxisIndex": 1, "data": df_kom["produksi"].tolist(), "itemStyle": {"color": COLORS[2]}, "lineStyle": {"width": 3}},
                             ],
                         }
@@ -2198,8 +2225,9 @@ elif kategori == "Pertanian":
                     delta_txt, _ = trend_info(last_kom["produksi"], prev_kom["produksi"] if prev_kom is not None else None)
                     insight_box(
                         f"Interpretasi {komoditas_nama}",
-                        f"Produksi {komoditas_nama} pada {int(last_kom['tahun'])} sebesar {fmt_id(last_kom['produksi'])} ton "
-                        f"dari luas panen {fmt_id(last_kom['luas_panen'])} Ha." + (f" {delta_txt}." if delta_txt else ""),
+                        f"Pada {int(last_kom['tahun'])}, produksi {komoditas_nama} mencapai {fmt_id(last_kom['produksi'])} ton dari luas panen "
+                        f"{fmt_id(last_kom['luas_panen'])} Ha." + (f" Perubahan produksi tercatat {delta_txt.lower()}." if delta_txt else "") +
+                        f" Perubahan produksi perlu dibaca bersama perubahan luas panen; tanpa data produktivitas, belum dapat disimpulkan apakah perubahannya berasal dari hasil per hektare atau dari perubahan areal panen.",
                     )
             if not df_ntp_src.empty:
                 with st.container(border=True):
