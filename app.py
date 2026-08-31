@@ -239,6 +239,24 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
     div[class*="st-key-ipm-kpi_"] .panel-title {{ font-size: 0.92rem; line-height: 1.45; min-height: 4.35em; overflow-wrap: anywhere; }}
 }}
 
+/* Pada ruang konten menengah (umumnya saat sidebar terbuka), lima kartu IPM
+   tidak dipaksa menyempit. Grid berubah menjadi 3+2 agar label dan angka tetap utuh. */
+@media (max-width: 1450px) and (min-width: 801px) {{
+    div[class*="st-key-ipm_indicator_grid"] div[data-testid="stHorizontalBlock"] {{ flex-wrap: wrap !important; gap: 1rem !important; }}
+    div[class*="st-key-ipm_indicator_grid"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {{
+        flex: 0 0 calc((100% - 2rem) / 3) !important;
+        width: calc((100% - 2rem) / 3) !important;
+    }}
+}}
+
+@media (max-width: 800px) {{
+    div[class*="st-key-ipm_indicator_grid"] div[data-testid="stHorizontalBlock"] {{ flex-wrap: wrap !important; }}
+    div[class*="st-key-ipm_indicator_grid"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {{
+        flex: 0 0 100% !important;
+        width: 100% !important;
+    }}
+}}
+
 /* ---- Tabel kustom ---- */
 .table-scroll {{ width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-shadow: {shadow}; margin: 10px 0; }}
 .custom-table {{ width: 100%; min-width: 480px; border-collapse: collapse; font-size: 0.88em; }}
@@ -1781,21 +1799,22 @@ elif sub_kategori == "IPM":
         else:
             years_i = df_i["tahun"].astype(int).tolist()
             df_i_valid = df_i.dropna(subset=["ipm"])
-            c_hero, c_uhh, c_hls, c_rls, c_peng = st.columns(5)
-            if not df_i_valid.empty:
-                last_i = df_i_valid.iloc[-1]
-                prev_i = df_i_valid.iloc[-2] if len(df_i_valid) > 1 else None
-                with c_hero:
-                    ipm_hero_card(
-                        last_i["tahun"], last_i["ipm"],
-                        prev_i["ipm"] if prev_i is not None else np.nan,
-                        prev_i["tahun"] if prev_i is not None else np.nan,
-                    )
+            with st.container(key="ipm_indicator_grid"):
+                c_hero, c_uhh, c_hls, c_rls, c_peng = st.columns(5)
+                if not df_i_valid.empty:
+                    last_i = df_i_valid.iloc[-1]
+                    prev_i = df_i_valid.iloc[-2] if len(df_i_valid) > 1 else None
+                    with c_hero:
+                        ipm_hero_card(
+                            last_i["tahun"], last_i["ipm"],
+                            prev_i["ipm"] if prev_i is not None else np.nan,
+                            prev_i["tahun"] if prev_i is not None else np.nan,
+                        )
 
-            sparkline_kpi_card(c_uhh, "Usia Harapan Hidup (UHH)", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0], container_key="ipm_kpi_uhh")
-            sparkline_kpi_card(c_hls, "Harapan Lama Sekolah (HLS)", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0], container_key="ipm_kpi_hls")
-            sparkline_kpi_card(c_rls, "Rata-rata Lama Sekolah (RLS)", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0], container_key="ipm_kpi_rls")
-            sparkline_kpi_card(c_peng, "Pengeluaran/Kapita Disesuaikan", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0], container_key="ipm_kpi_peng")
+                sparkline_kpi_card(c_uhh, "Usia Harapan Hidup (UHH)", f"{fmt_id(last_i['uhh'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["uhh"].tolist(), COLORS[0], container_key="ipm_kpi_uhh")
+                sparkline_kpi_card(c_hls, "Harapan Lama Sekolah (HLS)", f"{fmt_id(last_i['hls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["hls"].tolist(), COLORS[0], container_key="ipm_kpi_hls")
+                sparkline_kpi_card(c_rls, "Rata-rata Lama Sekolah (RLS)", f"{fmt_id(last_i['rls'], 2)} tahun" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["rls"].tolist(), COLORS[0], container_key="ipm_kpi_rls")
+                sparkline_kpi_card(c_peng, "Pengeluaran/Kapita Disesuaikan", f"Rp {fmt_id(last_i['pengeluaran'])} rb" if not df_i_valid.empty else "-", None, "flat", [str(y) for y in years_i], df_i["pengeluaran"].tolist(), COLORS[0], container_key="ipm_kpi_peng")
 
             if not df_i_valid.empty:
                 gap = last_i["ipm"] - last_i["ipm_kalsel"] if pd.notna(last_i.get("ipm_kalsel")) else None
