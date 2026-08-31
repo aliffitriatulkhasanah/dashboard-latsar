@@ -74,11 +74,13 @@ if "kepen_wilayah_pending" in st.session_state:
     st.session_state["kepen_wilayah"] = st.session_state.pop("kepen_wilayah_pending")
 
 SHEET_ID = st.secrets.get("SHEET_ID", "1nQh8AezWpM8TfsaknlNO922yqqBWWBfDKah4fm9tpHU")
-PRIMARY = "#4F46E5"
-SECONDARY = "#7C3AED"
-ACCENT = "#F59E0B"
-COLORS = ["#4F46E5", "#F59E0B", "#10B981", "#EC4899", "#06B6D4", "#D97706"]
-CARD_ACCENTS = ["#4F46E5", "#F59E0B", "#EC4899", "#06B6D4", "#10B981"]
+# Palet "cerah-terkendali": warna cukup berbeda untuk membedakan indikator,
+# tetapi memakai saturasi menengah agar nyaman dipandang dalam waktu lama.
+PRIMARY = "#3B5BDB"      # biru indigo: identitas utama dan elemen navigasi
+SECONDARY = "#845EF7"    # ungu lembut: aksen pendamping
+ACCENT = "#F59F00"       # kuning keemasan: sorotan dan interaksi
+COLORS = ["#3B5BDB", "#F59F00", "#12B886", "#E8597A", "#228BE6", "#845EF7"]
+CARD_ACCENTS = ["#3B5BDB", "#E8597A", "#F59F00", "#12B886", "#228BE6", "#845EF7", "#7950F2"]
 GEOJSON_PATH = "tanah_laut.geojson"
 LOGO_PATH = "bps.png"
 
@@ -143,7 +145,7 @@ def _html(*parts: str) -> str:
 # 3. CSS / TEMA
 # ==============================================================================
 def inject_css(dark: bool):
-    bg = "#0B1120" if dark else "#F7F9FC"
+    bg = "#0B1120" if dark else "#F6F8FF"
     surface = "#161B29" if dark else "#FFFFFF"
     sidebar_bg = "#111827" if dark else "#FFFFFF"
     text = "#E5E7EB" if dark else "#1F2937"
@@ -162,7 +164,7 @@ html, body, [class*="css"] {{ font-family: 'Inter', -apple-system, sans-serif !i
 #MainMenu, footer {{visibility: hidden;}}
 [data-testid="stHeader"] {{background-color: transparent !important;}}
 .block-container {{padding-top: 1.2rem !important; padding-bottom: 3rem !important; max-width: 97% !important;}}
-.stApp {{ background-color: {bg} !important; }}
+.stApp {{ background-color: {bg} !important; background-image: {"radial-gradient(circle at 3% 3%, rgba(132,94,247,0.14), transparent 26%), radial-gradient(circle at 98% 2%, rgba(245,159,0,0.11), transparent 22%)" if dark else "radial-gradient(circle at 3% 3%, rgba(132,94,247,0.09), transparent 26%), radial-gradient(circle at 98% 2%, rgba(245,159,0,0.10), transparent 22%), radial-gradient(circle at 78% 94%, rgba(18,184,134,0.07), transparent 24%)"} !important; }}
 [data-testid="stSidebar"] {{ background-color: {sidebar_bg} !important; border-right: 1px solid {border}; }}
 [data-testid="stSidebar"] .block-container {{ padding-top: 1.5rem !important; }}
 h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
@@ -171,13 +173,13 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 /* ---- Header halaman: judul italic serif polos (sesuai prototype - tanpa
    hero gradient/breadcrumb, cukup judul besar + subjudul kecil di bawahnya) ---- */
 .page-title {{ font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 700;
-    font-size: 3rem !important; color: {text}; margin: 0 0 4px 0; line-height: 1.2; }}
+    font-size: 3rem !important; color: {text}; margin: 0 0 4px 0; line-height: 1.2; text-decoration: underline; text-decoration-color: rgba(245,159,0,0.65); text-decoration-thickness: 5px; text-underline-offset: 8px; }}
 .page-subtitle {{ font-size: 0.95rem; color: {text_muted}; margin-bottom: 22px; }}
 .page-header-wrap {{ margin-bottom: 24px; }}
 
 /* ---- Kartu metrik (varian solid - dipakai di dalam halaman detail) ---- */
-.metric-card {{ background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 16px 14px 16px; min-height: 96px; box-shadow: {shadow}; display: flex; flex-direction: column; justify-content: flex-start; transition: transform 0.15s ease; }}
-.metric-card:hover {{ transform: translateY(-2px); }}
+.metric-card {{ background: linear-gradient(145deg, {surface} 0%, {surface} 74%, {"#1B2435" if dark else "#F4F7FF"} 100%); border: 1px solid {border}; border-left: 4px solid {PRIMARY}; border-radius: 12px; padding: 16px 16px 14px 16px; min-height: 96px; box-shadow: {shadow}; display: flex; flex-direction: column; justify-content: flex-start; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
+.metric-card:hover {{ transform: translateY(-3px); box-shadow: {"0 8px 20px rgba(0,0,0,0.28)" if dark else "0 8px 20px rgba(59,91,219,0.13)"}; }}
 .metric-card .m-top {{ display:flex; align-items:center; gap:8px; }}
 .metric-card .m-icon {{ font-size: 1.1rem; }}
 .metric-card .m-label {{ font-size: 0.74rem; font-weight: 700; color: {text_muted}; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.4px; }}
@@ -185,15 +187,15 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 .metric-card .m-trend {{ font-size: 0.76rem; font-weight: 700; }}
 
 /* ---- Kartu metrik varian OUTLINE (khusus landing page "Dashboard Utama" ---- */
-.metric-card-outline {{ background-color: {surface}; border: 3px solid #C8A96B; border-radius: 10px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
-.metric-card-outline:hover {{ transform: translateY(-2px); box-shadow: {shadow}; }}
+.metric-card-outline {{ background: linear-gradient(145deg, var(--card-tint) 0%, {surface} 72%); border: 2px solid var(--card-accent); border-radius: 14px; padding: 18px 14px; min-height: 96px; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; }}
+.metric-card-outline:hover {{ transform: translateY(-3px); box-shadow: {"0 9px 20px rgba(0,0,0,0.25)" if dark else "0 9px 20px rgba(59,91,219,0.14)"}; }}
 .metric-card-outline .mo-label {{ font-size: 0.78rem; font-weight: 700; color: {text}; }}
 .metric-card-outline .mo-value {{ font-size: 1.5rem; font-weight: 800; color: {text}; }}
 .metric-card-outline .mo-trend {{ font-size: 0.76rem; font-weight: 700; }}
 .m-up {{ color: #10B981; }} .m-down {{ color: #EF4444; }} .m-flat {{ color: {text_muted}; }}
 
 /* ---- Kotak interpretasi otomatis ---- */
-.insight-box {{ background-color: {surface}; border: 1px solid {border}; border-left: 4px solid {ACCENT}; padding: 14px 18px; border-radius: 10px; margin: 6px 0 22px 0; box-shadow: {shadow}; }}
+.insight-box {{ background: linear-gradient(105deg, {"rgba(245,159,0,0.12)" if dark else "#FFF9E8"} 0%, {surface} 58%); border: 1px solid {"rgba(245,159,0,0.28)" if dark else "rgba(245,159,0,0.34)"}; border-left: 4px solid {ACCENT}; padding: 14px 18px; border-radius: 10px; margin: 6px 0 22px 0; box-shadow: {shadow}; }}
 .insight-title {{ font-weight: 800; margin-bottom: 3px; font-size: 0.88rem; color: {text}; }}
 .insight-text {{ font-size: 0.88rem; color: {text_muted}; line-height: 1.5; }}
 
@@ -211,7 +213,7 @@ h1, h2, h3, h4, p, label, span, .stMarkdown {{ color: {text}; }}
 /* ---- Panel section (pembungkus chart) ---- */
 .panel-title {{ font-size: 1.02rem; font-weight: 700; color: {text}; margin-bottom: 2px; }}
 .panel-sub {{ font-size: 0.8rem; color: {text_muted}; margin-bottom: 10px; }}
-[data-testid="stVerticalBlockBorderWrapper"] {{ border-radius: 12px !important; border-color: {border} !important; background-color: {surface} !important; box-shadow: {shadow}; }}
+[data-testid="stVerticalBlockBorderWrapper"] {{ border-radius: 12px !important; border-color: {border} !important; background: linear-gradient(145deg, {surface}, {"#182235" if dark else "#FBFCFF"}) !important; box-shadow: {shadow}; }}
 
 /* ---- Chip badge (mis. "Kecamatan: Panyipatan" yang aktif akibat drill-down) ---- */
 .chip {{ display:inline-block; background-color: {surface}; border: 1.5px solid {PRIMARY}; color: {PRIMARY}; font-weight: 700; font-size: 0.85rem; padding: 6px 16px; border-radius: 999px; margin-bottom: 14px; }}
@@ -273,7 +275,7 @@ div[class*="st-key-subnav_"] .stButton > button {{
     box-shadow: none !important; justify-content: flex-start !important;
 }}
 div[class*="st-key-subnav_"] .stButton > button[kind="primary"] {{
-    background-color: #B08998 !important; color: #FFFFFF !important;
+    background: linear-gradient(135deg, {PRIMARY}, {SECONDARY}) !important; color: #FFFFFF !important;
 }}
 div[class*="st-key-subnav_"] .stButton > button[kind="secondary"] {{
     background-color: {"#374151" if dark else "#E5E7EB"} !important; color: {text} !important;
@@ -824,10 +826,14 @@ def metric_card(col, icon: str, label: str, value: str, trend: str = None, trend
         )
 
 
-def metric_card_outline(col, label: str, value: str, trend: str = None, trend_dir: str = "flat"):
-    """Varian kartu KPI bergaya OUTLINE (border tipis, tanpa fill warna) -
-    dipakai khusus di landing page 'Dashboard Utama', sesuai prototype
-    (Image 8: 7 kotak KPI dengan border oranye/emas tipis)."""
+def _hex_rgba(color: str, alpha: float) -> str:
+    """Ubah warna heksadesimal menjadi rgba untuk latar pastel kartu."""
+    raw = color.lstrip("#")
+    return f"rgba({int(raw[0:2], 16)}, {int(raw[2:4], 16)}, {int(raw[4:6], 16)}, {alpha})"
+
+
+def metric_card_outline(col, label: str, value: str, trend: str = None, trend_dir: str = "flat", accent: str = PRIMARY):
+    """Kartu KPI landing page dengan warna pembeda per indikator."""
     trend_html = ""
     if trend:
         cls = {"up": "m-up", "down": "m-down", "flat": "m-flat"}.get(trend_dir, "m-flat")
@@ -835,7 +841,7 @@ def metric_card_outline(col, label: str, value: str, trend: str = None, trend_di
         trend_html = f"<div class='mo-trend {cls}'>{arrow} {html.escape(trend)}</div>"
     with col:
         _html(
-            "<div class='metric-card-outline'>",
+            f"<div class='metric-card-outline' style='--card-accent:{accent}; --card-tint:{_hex_rgba(accent, 0.13)};'>",
             f"<div class='mo-label'>{html.escape(label)}</div>",
             f"<div class='mo-value'>{html.escape(value)}</div>",
             trend_html,
@@ -1374,18 +1380,18 @@ if kategori == "Dashboard Utama":
 
             # 2. Baris Pertama KPI (4 Kolom)
             r1 = st.columns(4)
-            metric_card_outline(r1[0], f"Jumlah Penduduk{th_kep}", fmt_id(row_kep["jumlah_penduduk"]) if row_kep is not None else "-")
-            metric_card_outline(r1[1], f"Tingkat Pengangguran Terbuka{th_tk}", f"{fmt_id(row_tk['tpt'], decimals=2)}%" if row_tk is not None and pd.notna(row_tk["tpt"]) else "-")
-            metric_card_outline(r1[2], f"Persentase Penduduk Miskin{th_ki}", f"{fmt_id(row_ki['p0'], decimals=2)}%" if row_ki is not None and pd.notna(row_ki["p0"]) else "-")
-            metric_card_outline(r1[3], f"Indeks Pembangunan Manusia{th_ki}", fmt_id(row_ki["ipm"], 2) if row_ki is not None and pd.notna(row_ki["ipm"]) else "-")
+            metric_card_outline(r1[0], f"Jumlah Penduduk{th_kep}", fmt_id(row_kep["jumlah_penduduk"]) if row_kep is not None else "-", accent=CARD_ACCENTS[0])
+            metric_card_outline(r1[1], f"Tingkat Pengangguran Terbuka{th_tk}", f"{fmt_id(row_tk['tpt'], decimals=2)}%" if row_tk is not None and pd.notna(row_tk["tpt"]) else "-", accent=CARD_ACCENTS[1])
+            metric_card_outline(r1[2], f"Persentase Penduduk Miskin{th_ki}", f"{fmt_id(row_ki['p0'], decimals=2)}%" if row_ki is not None and pd.notna(row_ki["p0"]) else "-", accent=CARD_ACCENTS[2])
+            metric_card_outline(r1[3], f"Indeks Pembangunan Manusia{th_ki}", fmt_id(row_ki["ipm"], 2) if row_ki is not None and pd.notna(row_ki["ipm"]) else "-", accent=CARD_ACCENTS[3])
 
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
 
             # 3. Baris Kedua KPI (3 Kolom)
             r2 = st.columns(3)
-            metric_card_outline(r2[0], f"Inflasi (y-on-y){bln_inf}", f"{fmt_id(row_inf['inflasi_yoy'], decimals=2)}%" if row_inf is not None and pd.notna(row_inf["inflasi_yoy"]) else "-")
-            metric_card_outline(r2[1], f"Pertumbuhan Ekonomi{th_pdrb}", f"{fmt_id(row_pdrb['pert_eko'], decimals=2)}%" if row_pdrb is not None and pd.notna(row_pdrb["pert_eko"]) else "-")
-            metric_card_outline(r2[2], f"Luas Panen Padi{th_padi}", f"{fmt_id(row_padi['luas_panen'])} Ha" if row_padi is not None else "-")
+            metric_card_outline(r2[0], f"Inflasi (y-on-y){bln_inf}", f"{fmt_id(row_inf['inflasi_yoy'], decimals=2)}%" if row_inf is not None and pd.notna(row_inf["inflasi_yoy"]) else "-", accent=CARD_ACCENTS[4])
+            metric_card_outline(r2[1], f"Pertumbuhan Ekonomi{th_pdrb}", f"{fmt_id(row_pdrb['pert_eko'], decimals=2)}%" if row_pdrb is not None and pd.notna(row_pdrb["pert_eko"]) else "-", accent=CARD_ACCENTS[5])
+            metric_card_outline(r2[2], f"Luas Panen Padi{th_padi}", f"{fmt_id(row_padi['luas_panen'])} Ha" if row_padi is not None else "-", accent=CARD_ACCENTS[6])
 
 elif sub_kategori == "Kependudukan":
     page_header("👥", "Kependudukan", breadcrumb_path)
