@@ -2162,7 +2162,7 @@ elif sub_kategori == "Track Record Inflasi":
                 st_echarts(options=opts_ihk, height="340px", key="tr_ihk_line", theme=e_theme)
 
             with st.container(border=True):
-                panel_title("Inflasi Year-on-Year Berdasarkan Kelompok Pengeluaran", "Pilih maksimal 3 kelompok untuk dibandingkan")
+                panel_title("Inflasi Month-to-Month Berdasarkan Kelompok Pengeluaran", "Pilih maksimal 3 kelompok untuk dibandingkan")
                 df_coicop = get_coicop()
                 if df_coicop.empty:
                     st.info("Data inflasi per kelompok pengeluaran belum tersedia.")
